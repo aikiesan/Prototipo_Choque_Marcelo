@@ -5,3 +5,4 @@ geopandas>=0.13.0
 folium>=0.14.0
 streamlit-folium>=0.13.0
 plotly>=5.0.0
+matplotlib>=3.6.0

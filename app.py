@@ -368,7 +368,7 @@ def criar_secao_validacao_modelo():
         st.markdown("*Mostra quanto cada setor produz para atender uma unidade de demanda final*")
 
         # Exibir matriz L com formatação elegante
-        matriz_styled = matriz_L_df.style.format("{:.3f}").background_gradient(cmap='YlOrRd')
+        matriz_styled = matriz_L_df.style.format("{:.3f}")
         st.dataframe(matriz_styled, use_container_width=True)
 
         st.markdown("""
