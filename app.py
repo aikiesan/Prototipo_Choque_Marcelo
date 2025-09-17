@@ -25,85 +25,396 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS para design elegante com suporte a dark/light mode
+# Modern CSS Design System
 st.markdown("""
 <style>
-    /* Forçar light mode para melhor legibilidade */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* === CSS VARIABLES & DESIGN TOKENS === */
+    :root {
+        --primary-50: #eff6ff;
+        --primary-100: #dbeafe;
+        --primary-500: #3b82f6;
+        --primary-600: #2563eb;
+        --primary-700: #1d4ed8;
+        --primary-900: #1e3a8a;
+
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
+
+        --success-500: #10b981;
+        --warning-500: #f59e0b;
+        --error-500: #ef4444;
+
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+        --transition-fast: 150ms ease-in-out;
+        --transition-normal: 250ms ease-in-out;
+    }
+
+    /* === GLOBAL STYLES === */
     .stApp {
-        background-color: #ffffff !important;
-        color: #000000 !important;
+        background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* Forçar elementos principais em light mode */
     .main .block-container {
-        background-color: #ffffff !important;
-        color: #000000 !important;
+        background-color: transparent;
+        padding-top: 2rem;
+        padding-bottom: 4rem;
+        max-width: 1400px;
     }
 
-    /* Frame elegante para containers */
-    .elegant-frame {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin: 10px 0;
-        color: #212529 !important;
+    /* === TYPOGRAPHY === */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: var(--gray-900);
+        letter-spacing: -0.025em;
     }
 
-    /* Títulos com estilo - melhor contraste */
+    .app-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .app-subtitle {
+        font-size: 1.125rem;
+        color: var(--gray-600);
+        text-align: center;
+        margin-bottom: 2rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+
+    /* === CARD SYSTEM === */
+    .card {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        transition: all var(--transition-normal);
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+        color: white;
+        padding: 1.5rem;
+        font-weight: 600;
+        font-size: 1.125rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-compact {
+        padding: 1rem;
+    }
+
+    /* === METRIC CARDS === */
+    .metric-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        transition: all var(--transition-normal);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .metric-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+        opacity: 0.8;
+    }
+
+    /* === SECTION STYLING === */
+    .section-header {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.5rem;
+        margin: 2rem 0 1rem 0;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        border-left: 4px solid var(--primary-500);
+    }
+
     .section-title {
-        color: #ffffff !important;
-        font-size: 22px;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 15px;
-        padding: 12px;
-        background: linear-gradient(90deg, #495057 0%, #6c757d 100%);
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    /* Cards informativos - compatível com light mode */
-    .info-card {
-        background: #f8f9fa !important;
-        color: #212529 !important;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #495057;
-        margin: 10px 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* === STREAMLIT COMPONENT OVERRIDES === */
+    .stSelectbox > div > div {
+        background-color: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
     }
 
-    /* Métricas destacadas - melhor contraste */
-    .metric-highlight {
-        background: linear-gradient(45deg, #495057, #6c757d) !important;
-        color: #ffffff !important;
-        padding: 12px;
-        border-radius: 8px;
-        text-align: center;
-        margin: 5px 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    .stSelectbox > div > div:focus-within {
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px var(--primary-50);
     }
 
-    /* Forçar texto escuro em todos os elementos */
-    .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6 {
-        color: #212529 !important;
+    .stNumberInput > div > div > input {
+        background-color: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
     }
 
-    /* Expander headers */
-    .streamlit-expander {
-        background-color: #f8f9fa !important;
-        border: 1px solid #dee2e6 !important;
+    .stNumberInput > div > div > input:focus {
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px var(--primary-50);
     }
 
-    /* Tabs */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+        color: white;
+        border: none;
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all var(--transition-fast);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stButton > button:hover {
+        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
     .stTabs [data-baseweb="tab-list"] {
-        background-color: #f8f9fa !important;
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 0.5rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
     }
 
     .stTabs [data-baseweb="tab"] {
-        color: #495057 !important;
+        border-radius: var(--radius-md);
+        color: var(--gray-600);
+        font-weight: 500;
+        transition: all var(--transition-fast);
+    }
+
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+        color: white;
+    }
+
+    /* === RESPONSIVE DESIGN === */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .app-title {
+            font-size: 2rem;
+        }
+
+        .metric-card {
+            padding: 1rem;
+        }
+
+        .card-header, .card-body {
+            padding: 1rem;
+        }
+    }
+
+    /* === ACCESSIBILITY === */
+    .stButton > button:focus,
+    .stSelectbox > div > div:focus-within,
+    .stNumberInput > div > div > input:focus {
+        outline: 2px solid var(--primary-500);
+        outline-offset: 2px;
+    }
+
+    /* === ANIMATIONS === */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .animate-slide-in {
+        animation: slideIn 0.4s ease-out;
+    }
+
+    /* === LOADING STATES === */
+    .loading-skeleton {
+        background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* === ENHANCED VISUAL ELEMENTS === */
+    .stExpander {
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin: 1rem 0;
+    }
+
+    .stExpander > details > summary {
+        background: var(--gray-50);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .stExpander[data-testid="expanderContainer"] {
+        background: white;
+    }
+
+    /* Success/Warning/Error styling */
+    .stSuccess {
+        background: var(--success-500);
+        color: white;
+        border-radius: var(--radius-md);
+        border: none;
+    }
+
+    .stWarning {
+        background: var(--warning-500);
+        color: white;
+        border-radius: var(--radius-md);
+        border: none;
+    }
+
+    .stError {
+        background: var(--error-500);
+        color: white;
+        border-radius: var(--radius-md);
+        border: none;
+    }
+
+    .stInfo {
+        background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+        border: 1px solid var(--primary-200);
+        border-radius: var(--radius-md);
+        color: var(--primary-800);
+    }
+
+    /* Map container styling */
+    .folium-map {
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    /* Progress indicators */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+        border-radius: var(--radius-sm);
+    }
+
+    /* Data frame styling */
+    .stDataFrame {
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    /* Balloons animation enhancement */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .floating {
+        animation: float 2s ease-in-out infinite;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -266,16 +577,44 @@ def executar_simulacao_avancada(df_economia, valor_choque, setor_choque):
 def criar_cabecalho_elegante():
     """Cria cabeçalho elegante com informações da ferramenta"""
     st.markdown("""
-    <div class="section-title">
-        🗺️ SIMULADOR DE CHOQUE - MARCELO CP2B
+    <div class="animate-fade-in">
+        <h1 class="app-title">
+            🗺️ Simulador de Choque - Marcelo CP2B
+        </h1>
+        <p class="app-subtitle">
+            Ferramenta avançada para simulação de impactos de investimentos nas <strong>133 regiões intermediárias do Brasil</strong>
+            utilizando o <strong>modelo Input-Output de Leontief</strong> com análise de efeitos diretos, indiretos e induzidos.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
+    # Adicionar métricas de status do sistema
     st.markdown("""
-    <div class="info-card">
-        <h4>📋 Análise Interativa de Impactos Econômicos Regionais</h4>
-        <p>Ferramenta avançada para simulação de impactos de investimentos nas <b>133 regiões intermediárias do Brasil</b>
-        utilizando o <b>modelo Input-Output de Leontief</b> com análise de efeitos diretos, indiretos e induzidos.</p>
+    <div class="card animate-slide-in" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <span>📊</span>
+            <span>Status do Sistema</span>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-500);">✅ Online</div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Sistema Operacional</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-600);">133</div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Regiões Disponíveis</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-600);">4</div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Setores Econômicos</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-500);">2024</div>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">Dados Atualizados</div>
+                </div>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -283,8 +622,11 @@ def criar_dashboard_regiao_elegante(dados_regiao):
     """Cria dashboard econômico elegante para região selecionada"""
 
     st.markdown("""
-    <div class="section-title">
-        📊 PERFIL ECONÔMICO REGIONAL
+    <div class="section-header">
+        <h2 class="section-title">
+            <span>📊</span>
+            <span>Perfil Econômico Regional</span>
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -297,30 +639,40 @@ def criar_dashboard_regiao_elegante(dados_regiao):
 
     with col1:
         st.markdown(f"""
-        <div class="metric-highlight">
-            <h3>💰 VAB Total</h3>
-            <h2>R$ {vab_total:,.0f} Mi</h2>
+        <div class="metric-card animate-fade-in">
+            <div class="metric-icon">💰</div>
+            <div class="metric-value">R$ {vab_total:,.0f}M</div>
+            <div class="metric-label">VAB Total</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
-        <div class="metric-highlight">
-            <h3>👥 Empregos</h3>
-            <h2>{empregos_total:,.0f}</h2>
+        <div class="metric-card animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="metric-icon">👥</div>
+            <div class="metric-value">{empregos_total:,.0f}</div>
+            <div class="metric-label">Empregos</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col3:
         st.markdown(f"""
-        <div class="metric-highlight">
-            <h3>🏢 Empresas</h3>
-            <h2>{empresas_total:,.0f}</h2>
+        <div class="metric-card animate-fade-in" style="animation-delay: 0.2s;">
+            <div class="metric-icon">🏢</div>
+            <div class="metric-value">{empresas_total:,.0f}</div>
+            <div class="metric-label">Empresas</div>
         </div>
         """, unsafe_allow_html=True)
 
     # Gráfico de composição setorial elegante
-    st.markdown("### 📈 Composição Setorial por VAB")
+    st.markdown("""
+    <div class="section-header" style="margin-top: 2rem;">
+        <h3 class="section-title">
+            <span>📈</span>
+            <span>Composição Setorial por VAB</span>
+        </h3>
+    </div>
+    """, unsafe_allow_html=True)
 
     cores_setores = [metadados_setores[setor]['cor'] for setor in dados_regiao['setor']]
 
@@ -344,19 +696,35 @@ def criar_dashboard_regiao_elegante(dados_regiao):
     )
 
     fig.update_layout(
-        height=350,
-        font=dict(size=12),
-        margin=dict(t=20, b=20, l=20, r=20)
+        height=400,
+        font=dict(size=13, family="Inter, sans-serif"),
+        margin=dict(t=30, b=30, l=30, r=30),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        )
     )
 
+    # Wrap the chart in a card
+    st.markdown('<div class="card" style="padding: 1rem; margin: 1rem 0;">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def criar_secao_validacao_modelo():
     """Cria seção de validação e parâmetros do modelo"""
 
     st.markdown("""
-    <div class="section-title">
-        🔬 VALIDAÇÃO E PARÂMETROS DO MODELO
+    <div class="section-header">
+        <h2 class="section-title">
+            <span>🔬</span>
+            <span>Validação e Parâmetros do Modelo</span>
+        </h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -364,17 +732,30 @@ def criar_secao_validacao_modelo():
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Matriz Leontief", "⚙️ Parâmetros", "📈 Multiplicadores", "🎯 Metodologia"])
 
     with tab1:
-        st.markdown("### Matriz de Impactos (I - A)⁻¹")
-        st.markdown("*Mostra quanto cada setor produz para atender uma unidade de demanda final*")
+        st.markdown("""
+        <div class="card">
+            <div class="card-header">
+                <span>📊</span>
+                <span>Matriz de Impactos (I - A)⁻¹</span>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--gray-600); margin-bottom: 1.5rem;">
+                    Mostra quanto cada setor produz para atender uma unidade de demanda final
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Exibir matriz L com formatação elegante
         matriz_styled = matriz_L_df.style.format("{:.3f}")
         st.dataframe(matriz_styled, use_container_width=True)
 
         st.markdown("""
-        **📝 Interpretação:** Cada célula (i,j) indica quanto o setor i precisa produzir para
-        atender R$ 1 de demanda final do setor j, incluindo efeitos diretos e indiretos.
-        """)
+        <div style="background: var(--primary-50); padding: 1rem; border-radius: var(--radius-md); margin-top: 1rem; border-left: 4px solid var(--primary-500);">
+            <strong>📝 Interpretação:</strong> Cada célula (i,j) indica quanto o setor i precisa produzir para
+            atender R$ 1 de demanda final do setor j, incluindo efeitos diretos e indiretos.
+        </div>
+        """, unsafe_allow_html=True)
 
     with tab2:
         st.markdown("### Parâmetros Técnicos do Modelo")
@@ -458,7 +839,7 @@ def criar_ranking_resultados_elegante(resultados_simulacao):
     """Cria ranking visual elegante de resultados com composição setorial"""
 
     st.markdown("""
-    <div class="section-title">
+    <div>
         🏆 RANKING DE IMPACTOS REGIONAIS
     </div>
     """, unsafe_allow_html=True)
@@ -575,7 +956,7 @@ def main():
     with col_esquerda:
         # Seção do mapa
         st.markdown("""
-        <div class="section-title">
+        <div>
             🗺️ MAPA INTERATIVO BRASIL
         </div>
         """, unsafe_allow_html=True)
@@ -671,13 +1052,13 @@ def main():
         if st.session_state.regiao_ativa is None:
             # Estado inicial - instruções elegantes
             st.markdown("""
-            <div class="section-title">
+            <div>
                 🎯 PAINEL DE CONTROLE
             </div>
             """, unsafe_allow_html=True)
 
             st.markdown("""
-            <div class="info-card">
+            <div>
                 <h3>🗺️ Como Utilizar a Ferramenta</h3>
                 <ol>
                     <li><b>👆 Clique em uma região</b> no mapa interativo</li>
@@ -690,7 +1071,7 @@ def main():
 
             # Métricas gerais do Brasil
             st.markdown("""
-            <div class="section-title">
+            <div>
                 📊 PANORAMA NACIONAL
             </div>
             """, unsafe_allow_html=True)
@@ -699,14 +1080,14 @@ def main():
             with col1:
                 vab_total_br = df_economia['vab'].sum()
                 st.markdown(f"""
-                <div class="metric-highlight">
+                <div>
                     <h4>💰 VAB Nacional</h4>
                     <h3>R$ {vab_total_br:,.0f} Mi</h3>
                 </div>
                 """, unsafe_allow_html=True)
 
                 st.markdown(f"""
-                <div class="metric-highlight">
+                <div>
                     <h4>🏭 Setores</h4>
                     <h3>{len(setores)}</h3>
                 </div>
@@ -715,14 +1096,14 @@ def main():
             with col2:
                 empregos_total_br = df_economia['empregos'].sum()
                 st.markdown(f"""
-                <div class="metric-highlight">
+                <div>
                     <h4>👥 Empregos</h4>
                     <h3>{empregos_total_br:,.0f}</h3>
                 </div>
                 """, unsafe_allow_html=True)
 
                 st.markdown(f"""
-                <div class="metric-highlight">
+                <div>
                     <h4>🗺️ Regiões</h4>
                     <h3>133</h3>
                 </div>
@@ -731,7 +1112,7 @@ def main():
         else:
             # Região selecionada - dashboard e simulação elegantes
             st.markdown(f"""
-            <div class="section-title">
+            <div>
                 📍 {st.session_state.regiao_ativa}
             </div>
             """, unsafe_allow_html=True)
@@ -744,7 +1125,7 @@ def main():
 
             # Interface de simulação elegante
             st.markdown("""
-            <div class="section-title">
+            <div>
                 🚀 SIMULAÇÃO DE INVESTIMENTO
             </div>
             """, unsafe_allow_html=True)
@@ -790,9 +1171,10 @@ def main():
                 with col2:
                     valor_choque = vab_setor * (percentual_choque / 100.0)
                     st.markdown(f"""
-                    <div class="metric-highlight">
-                        <h4>💵 Investimento</h4>
-                        <h3>R$ {valor_choque:,.1f} Mi</h3>
+                    <div class="metric-card" style="margin: 0;">
+                        <div class="metric-icon">💵</div>
+                        <div class="metric-value">R$ {valor_choque:,.1f}M</div>
+                        <div class="metric-label">Investimento</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -844,25 +1226,30 @@ def main():
             total_empregos = st.session_state.resultados_simulacao['impacto_empregos'].sum()
 
             st.markdown("""
-            <div class="section-title">
-                📈 RESULTADOS DA SIMULAÇÃO
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>📈</span>
+                    <span>Resultados da Simulação</span>
+                </h2>
             </div>
             """, unsafe_allow_html=True)
 
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(f"""
-                <div class="metric-highlight">
-                    <h4>💰 Impacto Total</h4>
-                    <h3>R$ {total_impacto:,.1f} Mi</h3>
+                <div class="metric-card animate-fade-in">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-value">R$ {total_impacto:,.1f}M</div>
+                    <div class="metric-label">Impacto Total</div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with col2:
                 st.markdown(f"""
-                <div class="metric-highlight">
-                    <h4>👥 Empregos Gerados</h4>
-                    <h3>{total_empregos:,.0f}</h3>
+                <div class="metric-card animate-fade-in" style="animation-delay: 0.1s;">
+                    <div class="metric-icon">👥</div>
+                    <div class="metric-value">{total_empregos:,.0f}</div>
+                    <div class="metric-label">Empregos Gerados</div>
                 </div>
                 """, unsafe_allow_html=True)
 
