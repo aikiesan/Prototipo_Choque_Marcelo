@@ -76,9 +76,11 @@ st.markdown("""
 
     .main .block-container {
         background-color: transparent;
-        padding-top: 2rem;
-        padding-bottom: 4rem;
-        max-width: 1400px;
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+        max-width: none;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 
     /* === TYPOGRAPHY === */
@@ -261,7 +263,7 @@ st.markdown("""
 
     /* === STREAMLIT COMPONENT OVERRIDES === */
     .stSelectbox > div > div {
-        background-color: white;
+        background-color: white !important;
         border: 2px solid var(--gray-200);
         border-radius: var(--radius-md);
         transition: all var(--transition-fast);
@@ -270,6 +272,82 @@ st.markdown("""
     .stSelectbox > div > div:focus-within {
         border-color: var(--primary-500);
         box-shadow: 0 0 0 3px var(--primary-50);
+    }
+
+    /* Fix dropdown styling - Universal compatibility */
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stSelectbox div[data-baseweb="select"] > div > div,
+    .stSelectbox div[data-baseweb="select"] > div > div > div,
+    .stSelectbox [data-baseweb="select"] .css-1uccc91-singleValue,
+    .stSelectbox [data-baseweb="select"] .css-1wa3eu0-placeholder,
+    .stSelectbox [data-baseweb="select"] .css-1dimb5e-singleValue {
+        background-color: var(--background-color, #ffffff) !important;
+        color: var(--text-color, #1e293b) !important;
+    }
+
+    /* Dropdown container */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: var(--background-color, #ffffff) !important;
+        border: 2px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 8px !important;
+    }
+
+    /* Fix dropdown options list */
+    div[role="listbox"],
+    .stSelectbox div[data-baseweb="popover"] > div,
+    .stSelectbox div[data-baseweb="popover"] > div > div {
+        background-color: var(--background-color, #ffffff) !important;
+        color: var(--text-color, #1e293b) !important;
+        border: 1px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+    }
+
+    /* Individual options */
+    div[role="option"],
+    .stSelectbox li[role="option"],
+    .stSelectbox div[role="option"] {
+        background-color: var(--background-color, #ffffff) !important;
+        color: var(--text-color, #1e293b) !important;
+        padding: 0.75rem 1rem !important;
+    }
+
+    /* Hover state for options */
+    div[role="option"]:hover,
+    .stSelectbox li[role="option"]:hover,
+    .stSelectbox div[role="option"]:hover {
+        background-color: var(--hover-color, #f1f5f9) !important;
+        color: var(--text-color, #1e293b) !important;
+    }
+
+    /* Selected option */
+    div[role="option"][aria-selected="true"],
+    .stSelectbox li[role="option"][aria-selected="true"] {
+        background-color: var(--selected-color, #dbeafe) !important;
+        color: var(--selected-text-color, #1e40af) !important;
+    }
+
+    /* Responsive theme support */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background-color: #1f2937;
+            --text-color: #f9fafb;
+            --border-color: #374151;
+            --hover-color: #374151;
+            --selected-color: #1e40af;
+            --selected-text-color: #dbeafe;
+        }
+    }
+
+    @media (prefers-color-scheme: light) {
+        :root {
+            --background-color: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --hover-color: #f1f5f9;
+            --selected-color: #dbeafe;
+            --selected-text-color: #1e40af;
+        }
     }
 
     .stNumberInput > div > div > input {
@@ -303,22 +381,33 @@ st.markdown("""
 
     .stTabs [data-baseweb="tab-list"] {
         background: white;
-        border-radius: var(--radius-lg);
-        padding: 0.5rem;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
     }
 
     .stTabs [data-baseweb="tab"] {
-        border-radius: var(--radius-md);
-        color: var(--gray-600);
+        border-radius: 8px;
+        color: #64748b;
         font-weight: 500;
-        transition: all var(--transition-fast);
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        padding: 0.75rem 1.5rem;
+        min-width: 200px;
+        text-align: center;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #f1f5f9;
+        color: #334155;
     }
 
     .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
+        box-shadow: 0 2px 4px -1px rgb(59 130 246 / 0.3);
     }
 
     /* === RESPONSIVE DESIGN === */
@@ -358,6 +447,11 @@ st.markdown("""
     @keyframes slideIn {
         from { opacity: 0; transform: translateX(-20px); }
         to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
     }
 
     .animate-fade-in {
@@ -619,36 +713,85 @@ def executar_simulacao_avancada(df_economia, valor_choque, setor_choque):
 # ==============================================================================
 
 def criar_cabecalho_elegante():
-    """Cria cabeçalho compacto e elegante"""
+    """Cria cabeçalho compacto e discreto"""
     st.markdown("""
-    <div class="animate-fade-in" style="text-align: center; margin-bottom: 2rem;">
-        <h1 class="app-title">
+    <div style="
+        text-align: center;
+        margin: 0.5rem 0 1rem 0;
+        padding: 0.75rem;
+    ">
+        <h1 style="
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 0.25rem 0;
+            line-height: 1.3;
+        ">
             🗺️ Simulador de Choque - Marcelo CP2B
         </h1>
-        <p class="app-subtitle">
-            Ferramenta avançada para simulação de impactos de investimentos nas <strong>133 regiões intermediárias do Brasil</strong>
-            utilizando o <strong>modelo Input-Output de Leontief</strong> com análise de efeitos diretos, indiretos e induzidos.
+        <p style="
+            font-size: 0.875rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        ">
+            Simulação de impactos econômicos nas 133 regiões do Brasil • Modelo Input-Output de Leontief
         </p>
     </div>
     """, unsafe_allow_html=True)
 
 def criar_controles_simulacao_sidebar(df_economia):
-    """Cria controles de simulação compactos para sidebar"""
+    """Cria controles de simulação elegantes e compactos para sidebar"""
 
     # Verificar se uma região foi selecionada
     if st.session_state.regiao_ativa is None:
         st.markdown("""
-        <div class="card">
-            <div class="card-header">
-                <span>🎯</span>
-                <span>Começar Simulação</span>
-            </div>
-            <div class="card-body">
-                <div style="text-align: center; padding: 1rem; color: var(--gray-600);">
-                    <h4>👆 Selecione uma região</h4>
-                    <p>Clique em qualquer região no mapa para começar</p>
+        <div style="
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 2px dashed #94a3b8;
+            text-align: center;
+            margin-bottom: 1rem;
+        ">
+            <div style="font-size: 3rem; margin-bottom: 1rem; animation: pulse 2s infinite;">👆</div>
+            <h3 style="color: #1e293b; margin-bottom: 1rem;">Como começar sua simulação</h3>
+            <div style="text-align: left; max-width: 280px; margin: 0 auto;">
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">1</span>
+                    <span style="color: #374151; font-size: 0.875rem;">Clique em uma região no mapa</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="background: #10b981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">2</span>
+                    <span style="color: #374151; font-size: 0.875rem;">Escolha o setor econômico</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">3</span>
+                    <span style="color: #374151; font-size: 0.875rem;">Defina o valor do investimento</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span style="background: #8b5cf6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">4</span>
+                    <span style="color: #374151; font-size: 0.875rem;">Execute e veja os resultados</span>
                 </div>
             </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Informações adicionais sobre o modelo
+        st.markdown("""
+        <div style="
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+        ">
+            <h4 style="color: #1e293b; margin: 0 0 0.5rem 0; font-size: 0.9rem;">💡 Sobre o modelo</h4>
+            <p style="color: #64748b; margin: 0; font-size: 0.8rem; line-height: 1.4;">
+                Utilizamos o modelo Input-Output de Leontief para calcular os <strong>impactos econômicos diretos, indiretos e induzidos</strong>
+                do seu investimento em todas as 133 regiões intermediárias do Brasil.
+            </p>
         </div>
         """, unsafe_allow_html=True)
         return
@@ -656,33 +799,59 @@ def criar_controles_simulacao_sidebar(df_economia):
     # Dados da região selecionada
     dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa].copy()
 
+    # Cabeçalho elegante da simulação
     st.markdown(f"""
-    <div class="card">
-        <div class="card-header">
-            <span>🚀</span>
-            <span>Simulação: {st.session_state.regiao_ativa}</span>
-        </div>
-        <div class="card-body">
+    <div style="
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+        margin-bottom: 0;
+        font-weight: 600;
+    ">
+        🚀 Simulação: {st.session_state.regiao_ativa}
+    </div>
+    <div style="
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    ">
     """, unsafe_allow_html=True)
 
-    # Seleção do setor
+    # Seleção do setor - mais compacta
     st.markdown("**🏭 Setor do Investimento**")
     opcoes_setores = [f"{metadados_setores[setor]['emoji']} {setor}"
                      for setor in setores]
 
     setor_idx = st.selectbox(
-        "Setor:",
+        "Escolha o setor:",
         options=range(len(setores)),
         format_func=lambda x: opcoes_setores[x],
-        key='setor_simulacao_sidebar'
+        key='setor_simulacao_sidebar',
+        label_visibility="collapsed"
     )
 
     setor_selecionado = setores[setor_idx]
     multiplicador = matriz_L_df.sum(axis=0)[setor_selecionado]
 
-    st.caption(f"Multiplicador: {multiplicador:.2f}x")
+    # Info compacta do multiplicador
+    st.markdown(f"""
+    <div style="
+        background: #f1f5f9;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        margin: 0.5rem 0;
+        font-size: 0.875rem;
+        color: #334155;
+    ">
+        <strong>Multiplicador:</strong> {multiplicador:.2f}x
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Valor do investimento
+    # Valor do investimento - layout refinado
     st.markdown("**💰 Valor do Investimento**")
     vab_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]['vab'].iloc[0]
 
@@ -697,31 +866,528 @@ def criar_controles_simulacao_sidebar(df_economia):
     )
 
     valor_choque = vab_setor * (percentual_choque / 100.0)
-    st.markdown(f"**Valor:** R$ {valor_choque:,.1f} Mi")
-    st.caption(f"VAB {setor_selecionado}: R$ {vab_setor:,.1f} Mi")
 
-    # Botão de simulação
+    # Informações de valor em cards compactos
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div style="
+            background: #ecfdf5;
+            border: 1px solid #86efac;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        ">
+            <div style="font-size: 1.25rem; font-weight: bold; color: #166534;">R$ {valor_choque:,.1f}M</div>
+            <div style="font-size: 0.75rem; color: #15803d;">Investimento</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div style="
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        ">
+            <div style="font-size: 1.25rem; font-weight: bold; color: #92400e;">R$ {vab_setor:,.1f}M</div>
+            <div style="font-size: 0.75rem; color: #a16207;">VAB Base</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Botão de simulação elegante
     if st.button("🚀 **EXECUTAR SIMULAÇÃO**", type="primary", use_container_width=True):
         with st.spinner("🔄 Calculando impactos..."):
             resultados, impactos_setoriais = executar_simulacao_avancada(
                 df_economia, valor_choque, setor_selecionado
             )
 
-            st.session_state.resultados_simulacao = resultados
-            st.session_state.parametros_simulacao = {
-                'regiao_origem': st.session_state.regiao_ativa,
-                'setor_investimento': setor_selecionado,
-                'valor_investimento': valor_choque,
+            # Incrementar contador de simulações
+            st.session_state.contador_simulacoes += 1
+
+            # Cores para diferentes simulações
+            cores_simulacao = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF', '#5F27CD']
+            cor_simulacao = cores_simulacao[(st.session_state.contador_simulacoes - 1) % len(cores_simulacao)]
+
+            # Criar nova simulação
+            nova_simulacao = {
+                'id': f'sim_{st.session_state.contador_simulacoes:03d}',
+                'nome': f'Simulação {st.session_state.contador_simulacoes}: {metadados_setores[setor_selecionado]["emoji"]} {setor_selecionado} em {st.session_state.regiao_ativa}',
+                'regiao': st.session_state.regiao_ativa,
+                'setor': setor_selecionado,
+                'valor': valor_choque,
                 'percentual_vab': percentual_choque,
-                'multiplicador_usado': multiplicador,
-                'timestamp': datetime.now()
+                'timestamp': datetime.now(),
+                'resultados': resultados,
+                'parametros': {
+                    'regiao_origem': st.session_state.regiao_ativa,
+                    'setor_investimento': setor_selecionado,
+                    'valor_investimento': valor_choque,
+                    'percentual_vab': percentual_choque,
+                    'multiplicador_usado': multiplicador,
+                    'timestamp': datetime.now()
+                },
+                'cor': cor_simulacao,
+                'ativa': True
             }
 
-            st.success("✅ Simulação executada!")
+            # Adicionar à lista de simulações
+            st.session_state.simulacoes.append(nova_simulacao)
+
+            st.success(f"✅ Simulação {st.session_state.contador_simulacoes} executada!")
             st.balloons()
             st.rerun()
 
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def gerenciar_simulacoes():
+    """Interface para gerenciar múltiplas simulações"""
+    if len(st.session_state.simulacoes) == 0:
+        return
+
+    st.markdown("### 📊 Minhas Simulações")
+
+    # Estatísticas gerais
+    total_investimento = sum(sim['valor'] for sim in st.session_state.simulacoes if sim['ativa'])
+    simulacoes_ativas = sum(1 for sim in st.session_state.simulacoes if sim['ativa'])
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div style="
+            background: #ecfdf5;
+            border: 1px solid #86efac;
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+        ">
+            <div style="font-size: 1rem; font-weight: bold; color: #166534;">{len(st.session_state.simulacoes)}</div>
+            <div style="font-size: 0.7rem; color: #15803d;">Total</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div style="
+            background: #dbeafe;
+            border: 1px solid #60a5fa;
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+        ">
+            <div style="font-size: 1rem; font-weight: bold; color: #1d4ed8;">{simulacoes_ativas}</div>
+            <div style="font-size: 0.7rem; color: #2563eb;">Ativas</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Lista de simulações
+    for i, sim in enumerate(st.session_state.simulacoes):
+        with st.expander(f"{'✅' if sim['ativa'] else '❌'} {sim['nome'][:40]}...", expanded=False):
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                st.markdown(f"""
+                **📍 Região:** {sim['regiao']}
+                **🏭 Setor:** {sim['setor']}
+                **💰 Investimento:** R$ {sim['valor']:,.1f} Mi
+                **📅 Criada:** {sim['timestamp'].strftime('%H:%M:%S')}
+                """)
+
+            with col2:
+                # Toggle ativo/inativo
+                nova_ativacao = st.checkbox("Mostrar no mapa", value=sim['ativa'], key=f"toggle_{sim['id']}")
+                if nova_ativacao != sim['ativa']:
+                    st.session_state.simulacoes[i]['ativa'] = nova_ativacao
+                    st.rerun()
+
+                # Botão deletar
+                if st.button("🗑️", key=f"delete_{sim['id']}", help="Deletar simulação"):
+                    st.session_state.simulacoes.pop(i)
+                    st.rerun()
+
+    # Dashboard de comparação entre simulações ativas
+    simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
+    if len(simulacoes_ativas) >= 2:
+        st.markdown("---")
+        criar_dashboard_comparacao_simulacoes(simulacoes_ativas)
+
+    # Funcionalidades avançadas
+    if len(st.session_state.simulacoes) > 0:
+        st.markdown("---")
+        criar_funcionalidades_avancadas()
+
+def criar_funcionalidades_avancadas():
+    """Implementa funcionalidades avançadas: export, cenários predefinidos, etc."""
+    st.markdown("### ⚙️ Funcionalidades Avançadas")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("#### 📤 Exportar Resultados")
+
+        if st.button("📊 Exportar Relatório Completo", use_container_width=True):
+            relatorio_completo = gerar_relatorio_completo()
+            st.download_button(
+                label="📥 Download Relatório (CSV)",
+                data=relatorio_completo,
+                file_name=f"relatorio_simulacoes_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+
+        if len([sim for sim in st.session_state.simulacoes if sim['ativa']]) >= 2:
+            if st.button("📈 Exportar Comparação", use_container_width=True):
+                comparacao_data = gerar_comparacao_export()
+                st.download_button(
+                    label="📥 Download Comparação (CSV)",
+                    data=comparacao_data,
+                    file_name=f"comparacao_simulacoes_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+
+    with col2:
+        st.markdown("#### 🎯 Cenários Predefinidos")
+
+        cenarios = {
+            "Energia Renovável - Nordeste": {
+                "regiao": "Recife",
+                "setor": "Eletricidade, gás, água e esgoto",
+                "valor": 5000.0,
+                "descricao": "Investimento em energia renovável no Nordeste"
+            },
+            "Agronegócio - Centro-Oeste": {
+                "regiao": "Campo Grande",
+                "setor": "Agropecuária",
+                "valor": 3000.0,
+                "descricao": "Expansão do agronegócio no Centro-Oeste"
+            },
+            "Tecnologia - São Paulo": {
+                "regiao": "São Paulo",
+                "setor": "Serviços",
+                "valor": 8000.0,
+                "descricao": "Hub tecnológico em São Paulo"
+            },
+            "Infraestrutura - Norte": {
+                "regiao": "Manaus",
+                "setor": "Construção",
+                "valor": 4000.0,
+                "descricao": "Desenvolvimento de infraestrutura na Amazônia"
+            }
+        }
+
+        cenario_selecionado = st.selectbox(
+            "Escolha um cenário:",
+            list(cenarios.keys()),
+            help="Cenários predefinidos para análise rápida"
+        )
+
+        if st.button("🚀 Aplicar Cenário", use_container_width=True):
+            cenario = cenarios[cenario_selecionado]
+
+            # Configurar parâmetros do cenário
+            st.session_state.regiao_ativa = cenario["regiao"]
+
+            # Simular o cenário
+            simular_cenario_predefinido(cenario)
+            st.success(f"✅ Cenário '{cenario_selecionado}' aplicado com sucesso!")
+            st.rerun()
+
+        # Mostrar detalhes do cenário selecionado
+        if cenario_selecionado:
+            cenario = cenarios[cenario_selecionado]
+            st.markdown(f"""
+            <div style="
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                padding: 0.75rem;
+                border-radius: 6px;
+                margin-top: 0.5rem;
+            ">
+                <div style="font-size: 0.8rem; font-weight: bold; color: #374151; margin-bottom: 0.25rem;">
+                    {cenario['descricao']}
+                </div>
+                <div style="font-size: 0.7rem; color: #6b7280;">
+                    📍 {cenario['regiao']} • 🏭 {cenario['setor']} • 💰 R$ {cenario['valor']:,.1f}M
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+def gerar_relatorio_completo():
+    """Gera relatório completo de todas as simulações para export"""
+    relatorio_data = []
+
+    for sim in st.session_state.simulacoes:
+        resultados = sim['resultados']
+        total_impacto = resultados['impacto_producao'].sum()
+        total_empregos = resultados['impacto_empregos'].sum()
+
+        # Agregar por região
+        impactos_por_regiao = resultados.groupby('regiao').agg({
+            'impacto_producao': 'sum',
+            'impacto_empregos': 'sum'
+        }).reset_index()
+
+        for _, row in impactos_por_regiao.iterrows():
+            relatorio_data.append({
+                'simulacao_id': sim['id'],
+                'simulacao_nome': sim['nome'],
+                'regiao_origem': sim['regiao'],
+                'setor_investimento': sim['setor'],
+                'valor_investimento': sim['valor'],
+                'timestamp': sim['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                'regiao_impactada': row['regiao'],
+                'impacto_producao': row['impacto_producao'],
+                'impacto_empregos': row['impacto_empregos'],
+                'multiplicador_efetivo': total_impacto / sim['valor'],
+                'participacao_impacto': (row['impacto_producao'] / total_impacto) * 100
+            })
+
+    df_relatorio = pd.DataFrame(relatorio_data)
+    return df_relatorio.to_csv(index=False)
+
+def gerar_comparacao_export():
+    """Gera dados de comparação entre simulações ativas para export"""
+    simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
+
+    comparacao_data = []
+    for sim in simulacoes_ativas:
+        total_impacto = sim['resultados']['impacto_producao'].sum()
+        total_empregos = sim['resultados']['impacto_empregos'].sum()
+
+        comparacao_data.append({
+            'simulacao_nome': sim['nome'],
+            'regiao_origem': sim['regiao'],
+            'setor': sim['setor'],
+            'investimento_milhoes': sim['valor'],
+            'impacto_total_milhoes': total_impacto,
+            'empregos_gerados': total_empregos,
+            'multiplicador_efetivo': total_impacto / sim['valor'],
+            'eficiencia_empregos': total_empregos / sim['valor'],
+            'timestamp': sim['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+            'cor_visualizacao': sim['cor']
+        })
+
+    df_comparacao = pd.DataFrame(comparacao_data)
+    return df_comparacao.to_csv(index=False)
+
+def simular_cenario_predefinido(cenario):
+    """Executa simulação com parâmetros predefinidos do cenário"""
+    # Buscar dados da região do cenário
+    dados_regiao = df_economia[df_economia['regiao'] == cenario['regiao']].copy()
+
+    if dados_regiao.empty:
+        st.error(f"Região '{cenario['regiao']}' não encontrada nos dados.")
+        return
+
+    # Encontrar setor mais próximo
+    setores_disponiveis = dados_regiao['setor'].unique()
+    setor_encontrado = None
+
+    for setor in setores_disponiveis:
+        if cenario['setor'].lower() in setor.lower() or setor.lower() in cenario['setor'].lower():
+            setor_encontrado = setor
+            break
+
+    if not setor_encontrado:
+        # Usar primeiro setor disponível como fallback
+        setor_encontrado = setores_disponiveis[0]
+
+    # Executar simulação
+    resultados = simular_choque_economico(
+        regiao_origem=cenario['regiao'],
+        setor_investimento=setor_encontrado,
+        valor_investimento=cenario['valor']
+    )
+
+    if resultados is not None:
+        # Gerar cor única para o cenário
+        cores_disponiveis = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F']
+        cor_simulacao = cores_disponiveis[len(st.session_state.simulacoes) % len(cores_disponiveis)]
+
+        # Adicionar à lista de simulações
+        nova_simulacao = {
+            'id': f'cenario_{st.session_state.contador_simulacoes:03d}',
+            'nome': f'Cenário {st.session_state.contador_simulacoes}: {setor_encontrado} em {cenario["regiao"]}',
+            'regiao': cenario['regiao'],
+            'setor': setor_encontrado,
+            'valor': cenario['valor'],
+            'timestamp': datetime.now(),
+            'resultados': resultados,
+            'cor': cor_simulacao,
+            'ativa': True
+        }
+
+        st.session_state.simulacoes.append(nova_simulacao)
+        st.session_state.contador_simulacoes += 1
+
+        # Atualizar resultados atuais
+        st.session_state.resultados_simulacao = resultados
+        st.session_state.parametros_simulacao = {
+            'regiao_origem': cenario['regiao'],
+            'setor_investimento': setor_encontrado,
+            'valor_investimento': cenario['valor'],
+            'percentual_vab': (cenario['valor'] / dados_regiao[dados_regiao['setor'] == setor_encontrado]['vab'].sum()) * 100,
+            'multiplicador_usado': resultados['impacto_producao'].sum() / cenario['valor'],
+            'timestamp': datetime.now()
+        }
+
+def criar_dashboard_comparacao_simulacoes(simulacoes_ativas):
+    """Cria dashboard de comparação entre múltiplas simulações ativas"""
+    st.markdown("### 📊 Comparação entre Simulações")
+
+    # Preparar dados para comparação
+    dados_comparacao = []
+    for sim in simulacoes_ativas:
+        total_impacto = sim['resultados']['impacto_producao'].sum()
+        total_empregos = sim['resultados']['impacto_empregos'].sum()
+        top_regiao = sim['resultados'].groupby('regiao')['impacto_producao'].sum().idxmax()
+        top_impacto_regiao = sim['resultados'].groupby('regiao')['impacto_producao'].sum().max()
+
+        dados_comparacao.append({
+            'nome': sim['nome'][:25] + '...' if len(sim['nome']) > 25 else sim['nome'],
+            'setor': sim['setor'],
+            'regiao_origem': sim['regiao'],
+            'investimento': sim['valor'],
+            'impacto_total': total_impacto,
+            'empregos_total': total_empregos,
+            'multiplicador_efetivo': total_impacto / sim['valor'],
+            'top_regiao': top_regiao,
+            'top_impacto': top_impacto_regiao,
+            'cor': sim['cor']
+        })
+
+    df_comp = pd.DataFrame(dados_comparacao)
+
+    # Métricas de comparação em cards
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(f"""
+        <div style="
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        ">
+            <div style="font-size: 1.1rem; font-weight: bold; color: #0369a1;">
+                R$ {df_comp['impacto_total'].sum():,.1f}M
+            </div>
+            <div style="font-size: 0.8rem; color: #0284c7;">Impacto Total Combinado</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div style="
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        ">
+            <div style="font-size: 1.1rem; font-weight: bold; color: #15803d;">
+                {df_comp['empregos_total'].sum():,.0f}
+            </div>
+            <div style="font-size: 0.8rem; color: #16a34a;">Empregos Combinados</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        mult_medio = df_comp['multiplicador_efetivo'].mean()
+        st.markdown(f"""
+        <div style="
+            background: #fefce8;
+            border: 1px solid #eab308;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        ">
+            <div style="font-size: 1.1rem; font-weight: bold; color: #a16207;">
+                {mult_medio:.2f}x
+            </div>
+            <div style="font-size: 0.8rem; color: #ca8a04;">Multiplicador Médio</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Gráfico de comparação de impactos
+    fig_comp = px.bar(
+        df_comp,
+        x='nome',
+        y='impacto_total',
+        color='nome',
+        title="Comparação de Impactos Totais por Simulação",
+        labels={'impacto_total': 'Impacto Total (R$ Mi)', 'nome': 'Simulação'},
+        color_discrete_sequence=[sim['cor'] for sim in simulacoes_ativas]
+    )
+
+    fig_comp.update_layout(
+        height=350,
+        showlegend=False,
+        xaxis_tickangle=-45
+    )
+
+    st.plotly_chart(fig_comp, use_container_width=True)
+
+    # Gráfico de eficiência (multiplicador efetivo)
+    fig_mult = px.scatter(
+        df_comp,
+        x='investimento',
+        y='multiplicador_efetivo',
+        size='empregos_total',
+        color='nome',
+        title="Eficiência das Simulações (Multiplicador vs Investimento)",
+        labels={
+            'investimento': 'Investimento (R$ Mi)',
+            'multiplicador_efetivo': 'Multiplicador Efetivo',
+            'empregos_total': 'Empregos'
+        },
+        color_discrete_sequence=[sim['cor'] for sim in simulacoes_ativas],
+        hover_data=['setor', 'regiao_origem']
+    )
+
+    fig_mult.update_layout(height=350, showlegend=False)
+    st.plotly_chart(fig_mult, use_container_width=True)
+
+    # Tabela de comparação detalhada
+    st.markdown("#### 📋 Comparação Detalhada")
+
+    df_display = df_comp[['nome', 'setor', 'regiao_origem', 'investimento', 'impacto_total',
+                         'empregos_total', 'multiplicador_efetivo', 'top_regiao']].copy()
+
+    df_display.columns = ['Simulação', 'Setor', 'Região Origem', 'Investimento (R$ Mi)',
+                         'Impacto Total (R$ Mi)', 'Empregos', 'Multiplicador', 'Top Região Impactada']
+
+    # Formatação da tabela
+    styled_df = df_display.style.format({
+        'Investimento (R$ Mi)': '{:,.1f}',
+        'Impacto Total (R$ Mi)': '{:,.1f}',
+        'Empregos': '{:,.0f}',
+        'Multiplicador': '{:.2f}x'
+    })
+
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+
+    # Análise de convergência regional
+    if len(simulacoes_ativas) >= 2:
+        st.markdown("#### 🎯 Análise de Convergência Regional")
+
+        # Verificar se há simulações na mesma região
+        regioes_origem = df_comp['regiao_origem'].tolist()
+        regioes_repetidas = [r for r in set(regioes_origem) if regioes_origem.count(r) > 1]
+
+        if regioes_repetidas:
+            st.markdown(f"**⚠️ Concentração detectada:** {len(regioes_repetidas)} região(ões) com múltiplas simulações")
+            for regiao in regioes_repetidas:
+                sims_regiao = [s for s in simulacoes_ativas if s['regiao'] == regiao]
+                st.markdown(f"- **{regiao}:** {len(sims_regiao)} simulações")
+        else:
+            st.markdown("**✅ Distribuição diversificada:** Cada simulação em região diferente")
 
 def criar_dashboard_regiao_elegante(dados_regiao):
     """Cria dashboard econômico elegante para região selecionada"""
@@ -1032,13 +1698,38 @@ def main():
 
     df_economia = gerar_dados_economicos(gdf)
 
-    # Estado da sessão
+    # Estado da sessão para sistema multi-simulação
     if 'regiao_ativa' not in st.session_state:
         st.session_state.regiao_ativa = None
-    if 'resultados_simulacao' not in st.session_state:
+    if 'simulacoes' not in st.session_state:
+        st.session_state.simulacoes = []
+    if 'contador_simulacoes' not in st.session_state:
+        st.session_state.contador_simulacoes = 0
+
+    # Manter compatibilidade com código existente
+    # A simulação "ativa" é a última da lista ou None se não houver
+    if len(st.session_state.simulacoes) > 0:
+        st.session_state.resultados_simulacao = st.session_state.simulacoes[-1]['resultados']
+        st.session_state.parametros_simulacao = st.session_state.simulacoes[-1]['parametros']
+    else:
         st.session_state.resultados_simulacao = None
-    if 'parametros_simulacao' not in st.session_state:
         st.session_state.parametros_simulacao = None
+
+    # ============================================================================
+    # NAVEGAÇÃO POR ABAS
+    # ============================================================================
+    tab1, tab2 = st.tabs(["🗺️ **Simulação Principal**", "🔬 **Validação Técnica**"])
+
+    with tab1:
+        # ABA PRINCIPAL - SIMULAÇÃO E MAPA
+        simulacao_principal_tab(gdf, df_economia)
+
+    with tab2:
+        # ABA TÉCNICA - VALIDAÇÃO E PARÂMETROS
+        criar_secao_validacao_modelo()
+
+def simulacao_principal_tab(gdf, df_economia):
+    """Aba principal com simulação e mapa"""
 
     # Layout principal 60/40 (60% mapa, 40% controles)
     col_esquerda, col_direita = st.columns([0.6, 0.4])
@@ -1047,15 +1738,8 @@ def main():
     # COLUNA ESQUERDA: MAPA E REGIÃO
     # ==============================================================================
     with col_esquerda:
-        # Seção do mapa
-        st.markdown("""
-        <div class="section-header">
-            <h2 class="section-title">
-                <span>🗺️</span>
-                <span>Mapa Interativo do Brasil</span>
-            </h2>
-        </div>
-        """, unsafe_allow_html=True)
+        # Título simples do mapa
+        st.markdown("### 🗺️ Mapa Interativo do Brasil")
 
         # Criar mapa
         mapa = folium.Map(
@@ -1065,32 +1749,49 @@ def main():
             prefer_canvas=True
         )
 
-        # Camada de resultados (se existir simulação)
-        if st.session_state.resultados_simulacao is not None:
-            # Agregar resultados por região
-            resultados_agregados = st.session_state.resultados_simulacao.groupby('regiao')['impacto_producao'].sum().reset_index()
+        # Camadas de múltiplas simulações
+        simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
 
-            # Merge com geometrias
-            gdf_com_dados = gdf.merge(
-                resultados_agregados,
-                left_on='NM_RGINT',
-                right_on='regiao',
-                how='left'
-            ).fillna(0)
+        if len(simulacoes_ativas) > 0:
+            for i, simulacao in enumerate(simulacoes_ativas):
+                # Agregar resultados por região para esta simulação
+                resultados_agregados = simulacao['resultados'].groupby('regiao')['impacto_producao'].sum().reset_index()
 
-            # Choropleth de impactos
-            if gdf_com_dados['impacto_producao'].max() > 0:
-                choro = folium.Choropleth(
-                    geo_data=gdf_com_dados,
-                    data=gdf_com_dados,
-                    columns=['NM_RGINT', 'impacto_producao'],
-                    key_on='feature.properties.NM_RGINT',
-                    fill_color='YlOrRd',
-                    fill_opacity=0.8,
-                    line_opacity=0.3,
-                    legend_name='Impacto na Produção (R$ Milhões)'
-                )
-                choro.add_to(mapa)
+                # Merge com geometrias
+                gdf_com_dados = gdf.merge(
+                    resultados_agregados,
+                    left_on='NM_RGINT',
+                    right_on='regiao',
+                    how='left'
+                ).fillna(0)
+
+                # Choropleth para esta simulação com cor específica
+                if gdf_com_dados['impacto_producao'].max() > 0:
+                    # Converter cor hex para gradiente
+                    import colorsys
+                    hex_color = simulacao['cor'].lstrip('#')
+                    rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+                    h, s, v = colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255)
+
+                    # Criar gradiente baseado na cor da simulação
+                    color_scale = ['#ffffff', simulacao['cor']]
+
+                    choro = folium.Choropleth(
+                        geo_data=gdf_com_dados,
+                        data=gdf_com_dados,
+                        columns=['NM_RGINT', 'impacto_producao'],
+                        key_on='feature.properties.NM_RGINT',
+                        fill_color=['white', simulacao['cor']],
+                        fill_opacity=0.6 - (i * 0.1),  # Reduzir opacidade para sobreposições
+                        line_opacity=0.4,
+                        legend_name=f'{simulacao["nome"][:30]}... (R$ Mi)',
+                        name=f'layer_{simulacao["id"]}'
+                    )
+                    choro.add_to(mapa)
+
+            # Adicionar controle de layers se houver múltiplas simulações
+            if len(simulacoes_ativas) > 1:
+                folium.LayerControl(collapsed=False).add_to(mapa)
 
         # Camada de interação
         folium.GeoJson(
@@ -1147,19 +1848,26 @@ def main():
     # COLUNA DIREITA: CONTROLES E RESULTADOS
     # ==============================================================================
     with col_direita:
-        # Controles de simulação
-        criar_controles_simulacao_sidebar(df_economia)
-
-        # Botão Nova Simulação (se houver resultados)
-        if st.session_state.resultados_simulacao is not None:
-            st.markdown("---")
-            if st.button("🔄 **NOVA SIMULAÇÃO**", type="secondary", use_container_width=True):
-                # Reset todos os estados
+        # Botão Reset Tudo no topo (se houver simulações)
+        if len(st.session_state.simulacoes) > 0:
+            if st.button("🔄 **RESET TODAS SIMULAÇÕES**", type="secondary", use_container_width=True):
+                # Reset sistema completo
+                st.session_state.simulacoes = []
+                st.session_state.contador_simulacoes = 0
                 st.session_state.regiao_ativa = None
                 st.session_state.resultados_simulacao = None
                 st.session_state.parametros_simulacao = None
-                st.success("✅ Parâmetros resetados! Selecione uma nova região.")
+                st.success("✅ Todas as simulações foram removidas!")
                 st.rerun()
+            st.markdown("---")
+
+        # Controles de simulação
+        criar_controles_simulacao_sidebar(df_economia)
+
+        # Interface de gerenciamento de simulações
+        if len(st.session_state.simulacoes) > 0:
+            st.markdown("---")
+            gerenciar_simulacoes()
 
         # Exibição de resultados elegantes (se houver)
         if st.session_state.resultados_simulacao is not None:
@@ -1231,29 +1939,10 @@ def main():
             fig_setores.update_layout(height=300, showlegend=False)
             st.plotly_chart(fig_setores, use_container_width=True)
 
-            # Ranking elegante (em expander para economizar espaço)
-            with st.expander("🏆 **Ver Ranking Completo de Regiões**", expanded=False):
-                criar_ranking_resultados_elegante(st.session_state.resultados_simulacao)
+            # Ranking elegante
+            st.markdown("### 🏆 Ranking de Regiões")
+            criar_ranking_resultados_elegante(st.session_state.resultados_simulacao)
 
-        # Link para validação técnica
-        st.markdown("---")
-        with st.expander("🔬 **Validação e Parâmetros Técnicos**", expanded=False):
-            st.markdown("""
-            <div style="text-align: center; padding: 1rem;">
-                <p>Para acessar os detalhes técnicos do modelo:</p>
-                <ul style="text-align: left; max-width: 300px; margin: 0 auto;">
-                    <li>📊 Matriz de Leontief</li>
-                    <li>⚙️ Parâmetros do modelo</li>
-                    <li>📈 Multiplicadores setoriais</li>
-                    <li>🎯 Metodologia completa</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-
-            if st.button("🔬 **VER DOCUMENTAÇÃO TÉCNICA**", use_container_width=True):
-                # Mostrar seção técnica temporariamente
-                st.markdown("---")
-                criar_secao_validacao_modelo()
 
 if __name__ == "__main__":
     main()
