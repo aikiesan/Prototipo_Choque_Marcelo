@@ -619,9 +619,9 @@ def executar_simulacao_avancada(df_economia, valor_choque, setor_choque):
 # ==============================================================================
 
 def criar_cabecalho_elegante():
-    """Cria cabeçalho elegante com informações da ferramenta"""
+    """Cria cabeçalho compacto e elegante"""
     st.markdown("""
-    <div class="animate-fade-in">
+    <div class="animate-fade-in" style="text-align: center; margin-bottom: 2rem;">
         <h1 class="app-title">
             🗺️ Simulador de Choque - Marcelo CP2B
         </h1>
@@ -632,35 +632,100 @@ def criar_cabecalho_elegante():
     </div>
     """, unsafe_allow_html=True)
 
-    # Adicionar métricas de status do sistema
+def criar_painel_simulacao_principal(df_economia):
+    """Cria painel principal de simulação em posição de destaque"""
     st.markdown("""
-    <div class="card animate-slide-in" style="margin-bottom: 2rem;">
+    <div class="card" style="margin: 2rem 0;">
         <div class="card-header">
-            <span>📊</span>
-            <span>Status do Sistema</span>
+            <span>🚀</span>
+            <span>Simulação de Impacto Econômico</span>
         </div>
         <div class="card-body">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-500);">✅ Online</div>
-                    <div style="color: var(--gray-600); font-size: 0.875rem;">Sistema Operacional</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-600);">133</div>
-                    <div style="color: var(--gray-600); font-size: 0.875rem;">Regiões Disponíveis</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-600);">4</div>
-                    <div style="color: var(--gray-600); font-size: 0.875rem;">Setores Econômicos</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-500);">2024</div>
-                    <div style="color: var(--gray-600); font-size: 0.875rem;">Dados Atualizados</div>
-                </div>
-            </div>
+    """, unsafe_allow_html=True)
+
+    # Verificar se uma região foi selecionada
+    if st.session_state.regiao_ativa is None:
+        st.markdown("""
+        <div style="text-align: center; padding: 2rem; color: var(--gray-600);">
+            <h3>👆 Selecione uma região no mapa abaixo para começar</h3>
+            <p>Clique em qualquer região intermediária para definir o local do investimento</p>
         </div>
+        """, unsafe_allow_html=True)
+        st.markdown('</div></div>', unsafe_allow_html=True)
+        return
+
+    # Dados da região selecionada
+    dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa].copy()
+
+    # Título da região
+    st.markdown(f"""
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--primary-600); margin-bottom: 0.5rem;">📍 {st.session_state.regiao_ativa}</h3>
+        <p style="color: var(--gray-600); margin: 0;">Configurar investimento e executar simulação</p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Layout horizontal para controles de simulação
+    col1, col2, col3 = st.columns([2, 2, 1])
+
+    with col1:
+        st.markdown("#### 🏭 Setor do Investimento")
+        opcoes_setores = [f"{metadados_setores[setor]['emoji']} {setor} - {metadados_setores[setor]['descricao']}"
+                         for setor in setores]
+
+        setor_idx = st.selectbox(
+            "Escolha o setor:",
+            options=range(len(setores)),
+            format_func=lambda x: opcoes_setores[x],
+            key='setor_simulacao_principal'
+        )
+
+        setor_selecionado = setores[setor_idx]
+        multiplicador = matriz_L_df.sum(axis=0)[setor_selecionado]
+        st.info(f"**Multiplicador:** {multiplicador:.2f}x")
+
+    with col2:
+        st.markdown("#### 💰 Valor do Investimento")
+        vab_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]['vab'].iloc[0]
+
+        percentual_choque = st.slider(
+            "% do VAB setorial:",
+            min_value=0.1,
+            max_value=50.0,
+            value=10.0,
+            step=0.1,
+            format="%.1f%%"
+        )
+
+        valor_choque = vab_setor * (percentual_choque / 100.0)
+        st.markdown(f"**Valor:** R$ {valor_choque:,.1f} Mi")
+        st.caption(f"Base: VAB {setor_selecionado} = R$ {vab_setor:,.1f} Mi")
+
+    with col3:
+        st.markdown("#### 🎯 Ação")
+        st.markdown("<br>", unsafe_allow_html=True)  # Spacing
+
+        if st.button("🚀 **SIMULAR**", type="primary", use_container_width=True, key="btn_simular_principal"):
+            with st.spinner("🔄 Calculando impactos..."):
+                resultados, impactos_setoriais = executar_simulacao_avancada(
+                    df_economia, valor_choque, setor_selecionado
+                )
+
+                st.session_state.resultados_simulacao = resultados
+                st.session_state.parametros_simulacao = {
+                    'regiao_origem': st.session_state.regiao_ativa,
+                    'setor_investimento': setor_selecionado,
+                    'valor_investimento': valor_choque,
+                    'percentual_vab': percentual_choque,
+                    'multiplicador_usado': multiplicador,
+                    'timestamp': datetime.now()
+                }
+
+                st.success("✅ Simulação executada!")
+                st.balloons()
+                st.rerun()
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 def criar_dashboard_regiao_elegante(dados_regiao):
     """Cria dashboard econômico elegante para região selecionada"""
@@ -991,6 +1056,11 @@ def main():
     if 'parametros_simulacao' not in st.session_state:
         st.session_state.parametros_simulacao = None
 
+    # ==============================================================================
+    # PAINEL PRINCIPAL DE SIMULAÇÃO (POSIÇÃO DE DESTAQUE)
+    # ==============================================================================
+    criar_painel_simulacao_principal(df_economia)
+
     # Layout principal 60/40 (60% mapa, 40% painel)
     col_esquerda, col_direita = st.columns([0.6, 0.4])
 
@@ -1085,169 +1155,41 @@ def main():
                 st.session_state.regiao_ativa = nova_regiao
                 st.rerun()
 
-        # Seção de validação do modelo (abaixo do mapa)
+        # Perfil da região selecionada (se houver) - POSICIONADO ABAIXO DO MAPA
+        if st.session_state.regiao_ativa is not None:
+            st.markdown("---")
+            dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
+            criar_dashboard_regiao_elegante(dados_regiao)
+
+        # Seção de validação do modelo (abaixo da região)
         st.markdown("---")
         criar_secao_validacao_modelo()
 
     # ==============================================================================
-    # COLUNA DIREITA: DASHBOARD E SIMULAÇÃO
+    # COLUNA DIREITA: RESULTADOS E INSTRUÇÕES
     # ==============================================================================
     with col_direita:
-        if st.session_state.regiao_ativa is None:
-            # Estado inicial - instruções elegantes
+        # Instruções quando não há resultados
+        if st.session_state.resultados_simulacao is None:
             st.markdown("""
-            <div>
-                🎯 PAINEL DE CONTROLE
+            <div class="card">
+                <div class="card-header">
+                    <span>🎯</span>
+                    <span>Como Usar</span>
+                </div>
+                <div class="card-body">
+                    <ol style="line-height: 1.8;">
+                        <li><strong>👆 Selecione uma região</strong> no mapa ao lado</li>
+                        <li><strong>🏭 Configure o setor</strong> no painel de simulação</li>
+                        <li><strong>💰 Defina o investimento</strong> com o slider</li>
+                        <li><strong>🚀 Execute a simulação</strong> e veja os resultados</li>
+                    </ol>
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
-            st.markdown("""
-            <div>
-                <h3>🗺️ Como Utilizar a Ferramenta</h3>
-                <ol>
-                    <li><b>👆 Clique em uma região</b> no mapa interativo</li>
-                    <li><b>📊 Analise o perfil</b> econômico da região</li>
-                    <li><b>🎯 Configure a simulação</b> de investimento</li>
-                    <li><b>🚀 Execute e analise</b> os impactos econômicos</li>
-                </ol>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Métricas gerais do Brasil
-            st.markdown("""
-            <div>
-                📊 PANORAMA NACIONAL
-            </div>
-            """, unsafe_allow_html=True)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                vab_total_br = df_economia['vab'].sum()
-                st.markdown(f"""
-                <div>
-                    <h4>💰 VAB Nacional</h4>
-                    <h3>R$ {vab_total_br:,.0f} Mi</h3>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown(f"""
-                <div>
-                    <h4>🏭 Setores</h4>
-                    <h3>{len(setores)}</h3>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with col2:
-                empregos_total_br = df_economia['empregos'].sum()
-                st.markdown(f"""
-                <div>
-                    <h4>👥 Empregos</h4>
-                    <h3>{empregos_total_br:,.0f}</h3>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown(f"""
-                <div>
-                    <h4>🗺️ Regiões</h4>
-                    <h3>133</h3>
-                </div>
-                """, unsafe_allow_html=True)
-
+        # Exibição de resultados elegantes (se houver)
         else:
-            # Região selecionada - dashboard e simulação elegantes
-            st.markdown(f"""
-            <div>
-                📍 {st.session_state.regiao_ativa}
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Dashboard da região
-            dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
-            criar_dashboard_regiao_elegante(dados_regiao)
-
-            st.markdown("---")
-
-            # Interface de simulação elegante
-            st.markdown("""
-            <div>
-                🚀 SIMULAÇÃO DE INVESTIMENTO
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Passo 1: Setor
-            with st.expander("🎯 **Passo 1: Seleção do Setor Econômico**", expanded=True):
-                st.markdown("Escolha o setor que receberá o investimento:")
-
-                opcoes_setores = []
-                for setor in setores:
-                    meta = metadados_setores[setor]
-                    opcoes_setores.append(f"{meta['emoji']} {setor} - {meta['descricao']}")
-
-                setor_idx = st.selectbox(
-                    "Setor:",
-                    options=range(len(setores)),
-                    format_func=lambda x: opcoes_setores[x],
-                    key='setor_simulacao'
-                )
-
-                setor_selecionado = setores[setor_idx]
-
-                # Mostrar multiplicador do setor
-                multiplicador = matriz_L_df.sum(axis=0)[setor_selecionado]
-                st.info(f"**Multiplicador de Produção:** {multiplicador:.2f}x")
-
-            # Passo 2: Intensidade
-            with st.expander("💰 **Passo 2: Definição do Valor do Investimento**", expanded=True):
-                vab_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]['vab'].iloc[0]
-
-                col1, col2 = st.columns([2, 1])
-
-                with col1:
-                    percentual_choque = st.slider(
-                        "Porcentagem do VAB setorial:",
-                        min_value=0.1,
-                        max_value=50.0,
-                        value=10.0,
-                        step=0.1,
-                        format="%.1f%%"
-                    )
-
-                with col2:
-                    valor_choque = vab_setor * (percentual_choque / 100.0)
-                    st.markdown(f"""
-                    <div class="metric-card" style="margin: 0;">
-                        <div class="metric-icon">💵</div>
-                        <div class="metric-value">R$ {valor_choque:,.1f}M</div>
-                        <div class="metric-label">Investimento</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                st.markdown(f"**Base de cálculo:** VAB {setor_selecionado} = R$ {vab_setor:,.1f} Mi")
-
-            # Botão de simulação elegante
-            if st.button("🚀 **EXECUTAR SIMULAÇÃO COMPLETA**", type="primary", use_container_width=True):
-                with st.spinner("🔄 Calculando impactos em 133 regiões × 4 setores..."):
-                    resultados, impactos_setoriais = executar_simulacao_avancada(
-                        df_economia, valor_choque, setor_selecionado
-                    )
-
-                    st.session_state.resultados_simulacao = resultados
-                    st.session_state.parametros_simulacao = {
-                        'regiao_origem': st.session_state.regiao_ativa,
-                        'setor_investimento': setor_selecionado,
-                        'valor_investimento': valor_choque,
-                        'percentual_vab': percentual_choque,
-                        'multiplicador_usado': multiplicador,
-                        'impactos_setoriais': impactos_setoriais,
-                        'timestamp': datetime.now()
-                    }
-
-                st.success("✅ Simulação executada com sucesso!")
-                st.balloons()
-                st.rerun()
-
-        # Exibição de resultados elegantes
-        if st.session_state.resultados_simulacao is not None:
             st.markdown("---")
 
             # Resumo dos parâmetros da simulação
