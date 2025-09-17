@@ -632,98 +632,94 @@ def criar_cabecalho_elegante():
     </div>
     """, unsafe_allow_html=True)
 
-def criar_painel_simulacao_principal(df_economia):
-    """Cria painel principal de simulação em posição de destaque"""
-    st.markdown("""
-    <div class="card" style="margin: 2rem 0;">
-        <div class="card-header">
-            <span>🚀</span>
-            <span>Simulação de Impacto Econômico</span>
-        </div>
-        <div class="card-body">
-    """, unsafe_allow_html=True)
+def criar_controles_simulacao_sidebar(df_economia):
+    """Cria controles de simulação compactos para sidebar"""
 
     # Verificar se uma região foi selecionada
     if st.session_state.regiao_ativa is None:
         st.markdown("""
-        <div style="text-align: center; padding: 2rem; color: var(--gray-600);">
-            <h3>👆 Selecione uma região no mapa abaixo para começar</h3>
-            <p>Clique em qualquer região intermediária para definir o local do investimento</p>
+        <div class="card">
+            <div class="card-header">
+                <span>🎯</span>
+                <span>Começar Simulação</span>
+            </div>
+            <div class="card-body">
+                <div style="text-align: center; padding: 1rem; color: var(--gray-600);">
+                    <h4>👆 Selecione uma região</h4>
+                    <p>Clique em qualquer região no mapa para começar</p>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown('</div></div>', unsafe_allow_html=True)
         return
 
     # Dados da região selecionada
     dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa].copy()
 
-    # Título da região
     st.markdown(f"""
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-        <h3 style="color: var(--primary-600); margin-bottom: 0.5rem;">📍 {st.session_state.regiao_ativa}</h3>
-        <p style="color: var(--gray-600); margin: 0;">Configurar investimento e executar simulação</p>
-    </div>
+    <div class="card">
+        <div class="card-header">
+            <span>🚀</span>
+            <span>Simulação: {st.session_state.regiao_ativa}</span>
+        </div>
+        <div class="card-body">
     """, unsafe_allow_html=True)
 
-    # Layout horizontal para controles de simulação
-    col1, col2, col3 = st.columns([2, 2, 1])
+    # Seleção do setor
+    st.markdown("**🏭 Setor do Investimento**")
+    opcoes_setores = [f"{metadados_setores[setor]['emoji']} {setor}"
+                     for setor in setores]
 
-    with col1:
-        st.markdown("#### 🏭 Setor do Investimento")
-        opcoes_setores = [f"{metadados_setores[setor]['emoji']} {setor} - {metadados_setores[setor]['descricao']}"
-                         for setor in setores]
+    setor_idx = st.selectbox(
+        "Setor:",
+        options=range(len(setores)),
+        format_func=lambda x: opcoes_setores[x],
+        key='setor_simulacao_sidebar'
+    )
 
-        setor_idx = st.selectbox(
-            "Escolha o setor:",
-            options=range(len(setores)),
-            format_func=lambda x: opcoes_setores[x],
-            key='setor_simulacao_principal'
-        )
+    setor_selecionado = setores[setor_idx]
+    multiplicador = matriz_L_df.sum(axis=0)[setor_selecionado]
 
-        setor_selecionado = setores[setor_idx]
-        multiplicador = matriz_L_df.sum(axis=0)[setor_selecionado]
-        st.info(f"**Multiplicador:** {multiplicador:.2f}x")
+    st.caption(f"Multiplicador: {multiplicador:.2f}x")
 
-    with col2:
-        st.markdown("#### 💰 Valor do Investimento")
-        vab_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]['vab'].iloc[0]
+    # Valor do investimento
+    st.markdown("**💰 Valor do Investimento**")
+    vab_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]['vab'].iloc[0]
 
-        percentual_choque = st.slider(
-            "% do VAB setorial:",
-            min_value=0.1,
-            max_value=50.0,
-            value=10.0,
-            step=0.1,
-            format="%.1f%%"
-        )
+    percentual_choque = st.slider(
+        "% do VAB setorial:",
+        min_value=0.1,
+        max_value=50.0,
+        value=10.0,
+        step=0.1,
+        format="%.1f%%",
+        key='slider_investimento'
+    )
 
-        valor_choque = vab_setor * (percentual_choque / 100.0)
-        st.markdown(f"**Valor:** R$ {valor_choque:,.1f} Mi")
-        st.caption(f"Base: VAB {setor_selecionado} = R$ {vab_setor:,.1f} Mi")
+    valor_choque = vab_setor * (percentual_choque / 100.0)
+    st.markdown(f"**Valor:** R$ {valor_choque:,.1f} Mi")
+    st.caption(f"VAB {setor_selecionado}: R$ {vab_setor:,.1f} Mi")
 
-    with col3:
-        st.markdown("#### 🎯 Ação")
-        st.markdown("<br>", unsafe_allow_html=True)  # Spacing
+    # Botão de simulação
+    if st.button("🚀 **EXECUTAR SIMULAÇÃO**", type="primary", use_container_width=True):
+        with st.spinner("🔄 Calculando impactos..."):
+            resultados, impactos_setoriais = executar_simulacao_avancada(
+                df_economia, valor_choque, setor_selecionado
+            )
 
-        if st.button("🚀 **SIMULAR**", type="primary", use_container_width=True, key="btn_simular_principal"):
-            with st.spinner("🔄 Calculando impactos..."):
-                resultados, impactos_setoriais = executar_simulacao_avancada(
-                    df_economia, valor_choque, setor_selecionado
-                )
+            st.session_state.resultados_simulacao = resultados
+            st.session_state.parametros_simulacao = {
+                'regiao_origem': st.session_state.regiao_ativa,
+                'setor_investimento': setor_selecionado,
+                'valor_investimento': valor_choque,
+                'percentual_vab': percentual_choque,
+                'multiplicador_usado': multiplicador,
+                'timestamp': datetime.now()
+            }
 
-                st.session_state.resultados_simulacao = resultados
-                st.session_state.parametros_simulacao = {
-                    'regiao_origem': st.session_state.regiao_ativa,
-                    'setor_investimento': setor_selecionado,
-                    'valor_investimento': valor_choque,
-                    'percentual_vab': percentual_choque,
-                    'multiplicador_usado': multiplicador,
-                    'timestamp': datetime.now()
-                }
-
-                st.success("✅ Simulação executada!")
-                st.balloons()
-                st.rerun()
+            st.success("✅ Simulação executada!")
+            st.balloons()
+            st.rerun()
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
@@ -1028,18 +1024,6 @@ def main():
     # Cabeçalho elegante
     criar_cabecalho_elegante()
 
-    # Botão Nova Simulação (se houver resultados)
-    if 'resultados_simulacao' in st.session_state and st.session_state.resultados_simulacao is not None:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("🔄 **NOVA SIMULAÇÃO**", type="secondary", use_container_width=True):
-                # Reset todos os estados
-                st.session_state.regiao_ativa = None
-                st.session_state.resultados_simulacao = None
-                st.session_state.parametros_simulacao = None
-                st.success("✅ Parâmetros resetados! Selecione uma nova região.")
-                st.rerun()
-
     # Carregamento de dados
     gdf = carregar_dados_geograficos()
     if gdf is None:
@@ -1056,22 +1040,20 @@ def main():
     if 'parametros_simulacao' not in st.session_state:
         st.session_state.parametros_simulacao = None
 
-    # ==============================================================================
-    # PAINEL PRINCIPAL DE SIMULAÇÃO (POSIÇÃO DE DESTAQUE)
-    # ==============================================================================
-    criar_painel_simulacao_principal(df_economia)
-
-    # Layout principal 60/40 (60% mapa, 40% painel)
+    # Layout principal 60/40 (60% mapa, 40% controles)
     col_esquerda, col_direita = st.columns([0.6, 0.4])
 
     # ==============================================================================
-    # COLUNA ESQUERDA: MAPA E VALIDAÇÃO
+    # COLUNA ESQUERDA: MAPA E REGIÃO
     # ==============================================================================
     with col_esquerda:
         # Seção do mapa
         st.markdown("""
-        <div>
-            🗺️ MAPA INTERATIVO BRASIL
+        <div class="section-header">
+            <h2 class="section-title">
+                <span>🗺️</span>
+                <span>Mapa Interativo do Brasil</span>
+            </h2>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1161,35 +1143,26 @@ def main():
             dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
             criar_dashboard_regiao_elegante(dados_regiao)
 
-        # Seção de validação do modelo (abaixo da região)
-        st.markdown("---")
-        criar_secao_validacao_modelo()
-
     # ==============================================================================
-    # COLUNA DIREITA: RESULTADOS E INSTRUÇÕES
+    # COLUNA DIREITA: CONTROLES E RESULTADOS
     # ==============================================================================
     with col_direita:
-        # Instruções quando não há resultados
-        if st.session_state.resultados_simulacao is None:
-            st.markdown("""
-            <div class="card">
-                <div class="card-header">
-                    <span>🎯</span>
-                    <span>Como Usar</span>
-                </div>
-                <div class="card-body">
-                    <ol style="line-height: 1.8;">
-                        <li><strong>👆 Selecione uma região</strong> no mapa ao lado</li>
-                        <li><strong>🏭 Configure o setor</strong> no painel de simulação</li>
-                        <li><strong>💰 Defina o investimento</strong> com o slider</li>
-                        <li><strong>🚀 Execute a simulação</strong> e veja os resultados</li>
-                    </ol>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        # Controles de simulação
+        criar_controles_simulacao_sidebar(df_economia)
+
+        # Botão Nova Simulação (se houver resultados)
+        if st.session_state.resultados_simulacao is not None:
+            st.markdown("---")
+            if st.button("🔄 **NOVA SIMULAÇÃO**", type="secondary", use_container_width=True):
+                # Reset todos os estados
+                st.session_state.regiao_ativa = None
+                st.session_state.resultados_simulacao = None
+                st.session_state.parametros_simulacao = None
+                st.success("✅ Parâmetros resetados! Selecione uma nova região.")
+                st.rerun()
 
         # Exibição de resultados elegantes (se houver)
-        else:
+        if st.session_state.resultados_simulacao is not None:
             st.markdown("---")
 
             # Resumo dos parâmetros da simulação
@@ -1261,6 +1234,26 @@ def main():
             # Ranking elegante (em expander para economizar espaço)
             with st.expander("🏆 **Ver Ranking Completo de Regiões**", expanded=False):
                 criar_ranking_resultados_elegante(st.session_state.resultados_simulacao)
+
+        # Link para validação técnica
+        st.markdown("---")
+        with st.expander("🔬 **Validação e Parâmetros Técnicos**", expanded=False):
+            st.markdown("""
+            <div style="text-align: center; padding: 1rem;">
+                <p>Para acessar os detalhes técnicos do modelo:</p>
+                <ul style="text-align: left; max-width: 300px; margin: 0 auto;">
+                    <li>📊 Matriz de Leontief</li>
+                    <li>⚙️ Parâmetros do modelo</li>
+                    <li>📈 Multiplicadores setoriais</li>
+                    <li>🎯 Metodologia completa</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.button("🔬 **VER DOCUMENTAÇÃO TÉCNICA**", use_container_width=True):
+                # Mostrar seção técnica temporariamente
+                st.markdown("---")
+                criar_secao_validacao_modelo()
 
 if __name__ == "__main__":
     main()
