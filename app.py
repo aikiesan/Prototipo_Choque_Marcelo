@@ -85,8 +85,42 @@ st.markdown("""
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Inter', sans-serif;
         font-weight: 600;
-        color: var(--gray-900);
+        color: var(--gray-900) !important;
         letter-spacing: -0.025em;
+    }
+
+    /* Force dark text for all Streamlit elements */
+    .stMarkdown, .stMarkdown p, .stMarkdown div,
+    .stText, p, span, div,
+    .streamlit-container, .block-container,
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stText"] {
+        color: var(--gray-900) !important;
+    }
+
+    /* Ensure main content has dark text */
+    .main .block-container * {
+        color: var(--gray-900) !important;
+    }
+
+    /* Override any white text */
+    .main * {
+        color: var(--gray-900) !important;
+    }
+
+    /* Specific fixes for Streamlit components */
+    [data-testid="metric-container"],
+    [data-testid="metric-container"] *,
+    .streamlit-expanderHeader,
+    .streamlit-expander *,
+    .stSelectbox label,
+    .stNumberInput label,
+    .stSlider label,
+    .element-container *,
+    .row-widget *,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: var(--gray-900) !important;
     }
 
     .app-title {
@@ -128,7 +162,7 @@ st.markdown("""
 
     .card-header {
         background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-        color: white;
+        color: white !important;
         padding: 1.5rem;
         font-weight: 600;
         font-size: 1.125rem;
@@ -137,12 +171,22 @@ st.markdown("""
         gap: 0.75rem;
     }
 
+    .card-header * {
+        color: white !important;
+    }
+
     .card-body {
         padding: 1.5rem;
+        color: var(--gray-900) !important;
+    }
+
+    .card-body * {
+        color: var(--gray-900) !important;
     }
 
     .card-compact {
         padding: 1rem;
+        color: var(--gray-900) !important;
     }
 
     /* === METRIC CARDS === */
