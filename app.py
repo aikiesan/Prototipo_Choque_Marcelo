@@ -1789,32 +1789,47 @@ def simulacao_principal_tab(gdf, df_economia):
                 # Paleta de cores para 5 classes
                 cores = ['#ffffd4', '#fed98e', '#fe9929', '#d95f0e', '#993404']
                 
+                # --- FUNÇÃO DE ESTILO SEGURA ---
+                def style_function_segura(feature):
+                    classe = feature['properties'].get('classe', 0)
+                    # Garante que a classe seja um inteiro e esteja dentro dos limites da lista de cores
+                    try:
+                        classe_segura = int(min(max(classe, 0), len(cores) - 1))
+                    except (ValueError, TypeError):
+                        classe_segura = 0
+                    
+                    return {
+                        'fillOpacity': 0.7,
+                        'weight': 0,  # Sem bordas no mapa de calor para não conflitar
+                        'color': 'transparent',
+                        'fillColor': cores[classe_segura]
+                    }
+                
                 # Desenha o mapa de calor usando GeoJson
                 folium.GeoJson(
                     gdf_com_dados,
                     name='Mapa de Calor',
-                    style_function=lambda feature: {
-                        'fillOpacity': 0.7, 
-                        'weight': 0,  # Sem bordas no mapa de calor para não conflitar
-                        'color': 'transparent',
-                        'fillColor': cores[int(feature['properties']['classe'])] if 'classe' in feature['properties'] else 'transparent'
-                    }
+                    style_function=style_function_segura
                 ).add_to(mapa)
 
-                # Legenda HTML dinâmica
+                # --- LEGENDA HTML DINÂMICA E SEGURA ---
                 if 'all_bins' in simulacao and selected_column in simulacao['all_bins']:
                     bins = simulacao['all_bins'][selected_column]
                     legend_labels = []
-                    for i in range(len(bins) - 1):
-                        limite_inferior = bins[i]
-                        limite_superior = bins[i+1]
-                        if selected_column == 'impacto_empregos':
-                            label = f"{limite_inferior:,.0f} - {limite_superior:,.0f}"
-                        elif limite_inferior < 1000:
-                            label = f"{limite_inferior:,.0f} - {limite_superior:,.0f} Mi"
-                        else:
-                            label = f"{limite_inferior/1000:,.1f} Bi - {limite_superior/1000:,.1f} Bi"
-                        legend_labels.append(label)
+                    # Garante que não teremos mais labels que cores disponíveis
+                    num_labels = min(len(bins) - 1, len(cores))
+                    
+                    for i in range(num_labels):
+                        if i < len(bins) - 1:  # Verificação adicional de segurança
+                            limite_inferior = bins[i]
+                            limite_superior = bins[i+1]
+                            if selected_column == 'impacto_empregos':
+                                label = f"{limite_inferior:,.0f} - {limite_superior:,.0f}"
+                            elif limite_inferior < 1000:
+                                label = f"{limite_inferior:,.0f} - {limite_superior:,.0f} Mi"
+                            else:
+                                label = f"{limite_inferior/1000:,.1f} Bi - {limite_superior/1000:,.1f} Bi"
+                            legend_labels.append(label)
 
                     titulo_legenda = {
                         'impacto_producao': 'Impacto na Produção (R$)',
@@ -1829,10 +1844,10 @@ def simulacao_principal_tab(gdf, df_economia):
                      border:2px solid grey; z-index:9999; font-size:14px;
                      background-color:rgba(255, 255, 255, 0.9);
                      padding: 10px; border-radius: 5px;">
-                     <strong>{titulo_legenda[selected_column]}</strong><br>
+                     <strong>{titulo_legenda.get(selected_column, layer_choice)}</strong><br>
                      '''
                     for i, label in enumerate(legend_labels):
-                        if i < len(cores):
+                        if i < len(cores):  # Verificação de segurança
                             legend_html += f'<i style="background:{cores[i]}; opacity:0.7; width:20px; height:20px; float:left; margin-right:8px; border:1px solid grey;"></i> {label}<br>'
                     
                     legend_html += '</div>'
