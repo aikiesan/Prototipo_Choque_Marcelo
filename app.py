@@ -30,12 +30,12 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    /* Define a fonte para toda a aplicação */
+    /* Define a fonte para o texto geral, mas evita afetar ícones */
     html, body, [class*="st-"], .st-emotion-cache {
         font-family: 'Inter', sans-serif;
     }
 
-    /* Estilo para os cards - usando uma classe customizada */
+    /* Estilo para os cards - usando uma classe customizada (SEGURO) */
     .card {
         background: white;
         border-radius: 12px;
@@ -45,25 +45,14 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
-    /* Estilo para os cabeçalhos de seção */
-    .section-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        margin: 2rem 0 1rem 0;
-        border-left: 4px solid #3b82f6;
-        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    }
-    
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    /* Garante que os botões primários tenham texto branco */
+    /* Garante que os botões primários tenham texto branco (SEGURO) */
     .stButton > button[kind="primary"] {
         color: white;
+    }
+
+    /* Remove a borda padrão do expander para um visual mais limpo */
+    .st-emotion-cache-1340p6x {
+        border: none !important;
     }
 
 </style>
@@ -796,7 +785,7 @@ def criar_sidebar_controles(df_economia, gdf):
                 st.rerun()
 
         # Explicação do modelo
-        with st.expander("💡 Entenda como o impacto é calculado"):
+        with st.expander("💡 Como o impacto é calculado?"):
             st.markdown("""
             <p style="font-size: 0.85rem; text-align: center; font-style: italic; color: #475569;">
                 Pense no seu investimento como uma pedra jogada em um lago.
@@ -804,53 +793,19 @@ def criar_sidebar_controles(df_economia, gdf):
             """, unsafe_allow_html=True)
 
             # Passo 1: O Impacto Direto
-            st.markdown("""
-            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                <div style="font-size: 2rem; margin-right: 1rem;">🎯</div>
-                <div>
-                    <strong style="color: #1e293b;">1. O Impacto Direto (Onde a 'Pedra' Cai)</strong>
-                    <p style="font-size: 0.8rem; color: #475569; margin: 0;">
-                        O valor total do seu investimento é aplicado <strong>100% na região imediata que você selecionou</strong>. Este é o efeito inicial e mais concentrado.
-                    </p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
+            st.markdown("🎯 **1. O Impacto Direto (Onde a 'Pedra' Cai)**")
+            st.caption("O valor total do seu investimento é aplicado 100% na região imediata que você selecionou. Este é o efeito inicial e mais concentrado.")
+            
             # Passo 2: O Efeito Cascata
-            st.markdown("""
-            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                <div style="font-size: 2rem; margin-right: 1rem;">🌊</div>
-                <div>
-                    <strong style="color: #1e293b;">2. O Efeito Cascata (As 'Ondas' se Espalham)</strong>
-                    <p style="font-size: 0.8rem; color: #475569; margin: 0;">
-                        Os impactos indiretos (empresas comprando de fornecedores) e induzidos (pessoas gastando salários) se espalham pelo país. A força dessas 'ondas' em outras regiões depende de dois fatores:
-                    </p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("🌊 **2. O Efeito Cascata (As 'Ondas' se Espalham)**")
+            st.caption("Os impactos indiretos (empresas comprando de fornecedores) e induzidos (pessoas gastando salários) se espalham pelo país. A força dessas 'ondas' depende de dois fatores:")
             
             # Detalhes do Efeito Cascata em Colunas
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("""
-                <div style="background-color: #f0f9ff; padding: 0.75rem; border-radius: 8px; text-align: center; height: 100%;">
-                    <div style="font-size: 1.5rem;">💰</div>
-                    <strong style="font-size: 0.9rem; color: #0c4a6e;">Tamanho Econômico</strong>
-                    <p style="font-size: 0.75rem; color: #374151; margin: 0;">
-                        Regiões com economias mais fortes no setor têm maior chance de absorver o impacto.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("💰 **Tamanho Econômico**\n\nRegiões com economias mais fortes no setor absorvem mais impacto.")
             with col2:
-                st.markdown("""
-                <div style="background-color: #f0fdf4; padding: 0.75rem; border-radius: 8px; text-align: center; height: 100%;">
-                    <div style="font-size: 1.5rem;">🗺️</div>
-                    <strong style="font-size: 0.9rem; color: #166534;">Proximidade Geográfica</strong>
-                    <p style="font-size: 0.75rem; color: #374151; margin: 0;">
-                        Quanto mais perto da origem, mais forte o impacto. O efeito diminui com a distância.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.success("🗺️ **Proximidade Geográfica**\n\nQuanto mais perto da origem, mais forte o impacto. O efeito diminui com a distância.")
 
         # Seção de status atual
         if st.session_state.regiao_ativa:
@@ -1951,9 +1906,22 @@ def simulacao_principal_tab(gdf, df_economia):
 
         # Perfil compacto da região selecionada
         if st.session_state.regiao_ativa is not None:
-            with st.expander(f"📍 {st.session_state.regiao_ativa}", expanded=True):
+            with st.expander(f"📍 Perfil da Região: {st.session_state.regiao_ativa}", expanded=True):
                 dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
-                criar_dashboard_regiao_elegante(dados_regiao)
+                
+                # Usando st.columns para garantir o layout correto
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("VAB Total", f"R$ {dados_regiao['vab'].sum():,.0f}M")
+                with col2:
+                    st.metric("Empregos", f"{dados_regiao['empregos'].sum():,}")
+                with col3:
+                    st.metric("Empresas", f"{dados_regiao['empresas'].sum():,}")
+
+                # Gráfico de Setor Dominante
+                setor_dominante = dados_regiao.loc[dados_regiao['vab'].idxmax()]
+                st.markdown(f"**Setor Principal:** {setor_dominante['setor']}")
+                st.progress(setor_dominante['vab'] / dados_regiao['vab'].sum())
 
     # ==============================================================================
     # COLUNA DIREITA: RESULTADOS DA SIMULAÇÃO
