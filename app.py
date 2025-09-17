@@ -535,136 +535,194 @@ def gerenciar_simulacoes(df_economia):
         criar_funcionalidades_avancadas(df_economia)
 
 def criar_sidebar_controles(df_economia):
-    """Nova sidebar com controles sem dropdown - só radio buttons e cards"""
+    """Sidebar com controles e lógica de colapso/expansão"""
 
-    # Header compacto
-    st.markdown("""
-    <div style="text-align: center; margin-bottom: 1rem;">
-        <h4 style="color: #1e293b; margin: 0;">🎯 Simulação Econômica</h4>
-        <p style="color: #64748b; font-size: 0.8rem; margin: 0;">Configure e execute</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Instruções step-by-step
-    st.markdown("""
-    <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 3px solid #3b82f6;">
-        <p style="font-size: 0.8rem; margin: 0; font-weight: 600; color: #1e293b;">Como simular:</p>
-        <div style="font-size: 0.7rem; color: #475569; margin-top: 0.5rem;">
-            1️⃣ Escolha o setor<br>
-            2️⃣ Defina o valor<br>
-            3️⃣ Clique no mapa<br>
-            4️⃣ Execute simulação
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Seleção de setor via RADIO BUTTONS (sem dropdown!)
-    st.markdown("**🏭 Setor de Investimento**")
-
-    # Preparar opções para radio buttons
-    setores = list(metadados_setores.keys())
-    opcoes_radio = [f"{metadados_setores[setor]['emoji']} {setor[:20]}" for setor in setores]
-
-    setor_selecionado_idx = st.radio(
-        "Escolha:",
-        range(len(setores)),
-        format_func=lambda x: opcoes_radio[x],
-        key="setor_radio_sidebar",
-        label_visibility="collapsed"
-    )
-
-    setor_selecionado = setores[setor_selecionado_idx]
-
-    # Valor do investimento com slider
-    st.markdown("**💰 Valor do Investimento**")
-    valor_investimento = st.slider(
-        "Milhões de R$:",
-        min_value=100.0,
-        max_value=50000.0,
-        value=5000.0,
-        step=100.0,
-        key="valor_slider_sidebar",
-        label_visibility="collapsed"
-    )
-
-    # Mostrar % do VAB se região selecionada
-    if st.session_state.regiao_ativa:
-        dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
-        dados_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]
-        if not dados_setor.empty:
-            vab_setor = dados_setor['vab'].sum()
-            percentual_vab = (valor_investimento / vab_setor) * 100
-            st.markdown(f"<small style='color: #64748b;'>📊 {percentual_vab:.1f}% do VAB do setor</small>", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # Cenários predefinidos como CARDS CLICÁVEIS (sem dropdown!)
-    st.markdown("**🎯 Cenários Predefinidos**")
-
-    cenarios = {
-        "Energia": {"emoji": "⚡", "setor": "Eletricidade, gás, água e esgoto", "valor": 5000, "regiao": "Recife"},
-        "Agro": {"emoji": "🌾", "setor": "Agropecuária", "valor": 3000, "regiao": "Campo Grande"},
-        "Tech": {"emoji": "💻", "setor": "Serviços", "valor": 8000, "regiao": "São Paulo"},
-        "Infra": {"emoji": "🏗️", "setor": "Construção", "valor": 4000, "regiao": "Manaus"}
-    }
-
-    # Cards clicáveis em grid 2x2
-    col1, col2 = st.columns(2)
-    for i, (nome, cenario) in enumerate(cenarios.items()):
-        col = col1 if i % 2 == 0 else col2
-        with col:
-            if st.button(
-                f"{cenario['emoji']}\n{nome}",
-                key=f"cenario_{nome}",
-                use_container_width=True,
-                help=f"{cenario['setor']} em {cenario['regiao']}"
-            ):
-                # Aplicar cenário
-                st.session_state.regiao_ativa = cenario['regiao']
-                aplicar_cenario_automatico(cenario, df_economia)
-                st.rerun()
-
-    st.markdown("---")
-
-    # Botões de ação principais
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("🚀 **SIMULAR**",
-                    type="primary",
-                    use_container_width=True,
-                    disabled=st.session_state.regiao_ativa is None):
-            if st.session_state.regiao_ativa:
-                executar_simulacao_nova(st.session_state.regiao_ativa, setor_selecionado, valor_investimento, df_economia)
-                st.rerun()
-
-    with col2:
-        if st.button("➕ **NOVA**",
-                    type="secondary",
-                    use_container_width=True):
-            # Reset para nova simulação
-            st.session_state.regiao_ativa = None
+    # Lógica para mostrar/esconder o conteúdo
+    if st.session_state.sidebar_state == 'expanded':
+        # Botão para colapsar
+        if st.button("⬅️ Esconder", use_container_width=True, help="Esconder controles para maximizar o mapa"):
+            st.session_state.sidebar_state = 'collapsed'
             st.rerun()
 
-    # Seção de status atual
-    if st.session_state.regiao_ativa:
-        st.markdown(f"""
-        <div style="background: #ecfdf5; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
-            <small style="color: #059669; font-weight: 600;">
-                📍 Região: {st.session_state.regiao_ativa}<br>
-                🏭 Setor: {setor_selecionado[:15]}...<br>
-                💰 Valor: R$ {valor_investimento:,.0f}M
-            </small>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
+        # Header compacto
         st.markdown("""
-        <div style="background: #fef3c7; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
-            <small style="color: #d97706;">
-                👆 Clique em uma região no mapa
-            </small>
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <h4 style="color: #1e293b; margin: 0;">🎯 Simulação Econômica</h4>
+            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">Configure e execute</p>
         </div>
         """, unsafe_allow_html=True)
+
+        # Instruções step-by-step
+        st.markdown("""
+        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 3px solid #3b82f6;">
+            <p style="font-size: 0.8rem; margin: 0; font-weight: 600; color: #1e293b;">Como simular:</p>
+            <div style="font-size: 0.7rem; color: #475569; margin-top: 0.5rem;">
+                1️⃣ Escolha o setor<br>
+                2️⃣ Defina o valor<br>
+                3️⃣ Clique no mapa<br>
+                4️⃣ Execute simulação
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Seleção de setor via RADIO BUTTONS (sem dropdown!)
+        st.markdown("**🏭 Setor de Investimento**")
+
+        # Preparar opções para radio buttons
+        setores = list(metadados_setores.keys())
+        opcoes_radio = [f"{metadados_setores[setor]['emoji']} {setor[:20]}" for setor in setores]
+
+        setor_selecionado_idx = st.radio(
+            "Escolha:",
+            range(len(setores)),
+            format_func=lambda x: opcoes_radio[x],
+            key="setor_radio_sidebar",
+            label_visibility="collapsed"
+        )
+
+        setor_selecionado = setores[setor_selecionado_idx]
+
+        # CORREÇÃO: Valor do investimento com CONTROLE POR PORCENTAGEM
+        st.markdown("**💰 Valor do Investimento**")
+        
+        # Desabilitar o controle se nenhuma região for selecionada
+        is_disabled = st.session_state.regiao_ativa is None
+
+        # O slider agora controla a PORCENTAGEM
+        percentual_choque = st.slider(
+            "% do VAB setorial na região:",
+            min_value=0.1,
+            max_value=50.0,
+            value=10.0,
+            step=0.1,
+            format="%.1f%%",
+            key='slider_percentual_investimento',
+            disabled=is_disabled,
+            help="Selecione o percentual do VAB do setor na região selecionada para simular como investimento."
+        )
+
+        # Calcular o valor absoluto e exibi-lo
+        if not is_disabled:
+            dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
+            dados_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]
+
+            if not dados_setor.empty:
+                vab_setor = dados_setor['vab'].sum()
+                valor_investimento = vab_setor * (percentual_choque / 100.0)
+
+                # Exibe o resultado do cálculo em um card informativo
+                st.markdown(f"""
+                <div style="background: #ecfdf5; border: 1px solid #86efac; padding: 0.75rem; border-radius: 8px; text-align: center; margin-top: 0.5rem;">
+                    <div style="font-size: 0.75rem; color: #15803d; text-transform: uppercase;">Valor do Investimento</div>
+                    <div style="font-size: 1.25rem; font-weight: bold; color: #166534;">
+                        R$ {valor_investimento:,.2f} Milhões
+                    </div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">(Base: VAB de R$ {vab_setor:,.1f} M)</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                valor_investimento = 0
+                st.warning("Dados do setor não encontrados para esta região.")
+        else:
+            valor_investimento = 0
+            st.info("Selecione uma região no mapa para definir o valor do investimento.")
+
+        st.markdown("---")
+
+        # Cenários predefinidos como CARDS CLICÁVEIS (sem dropdown!)
+        st.markdown("**🎯 Cenários Predefinidos**")
+
+        cenarios = {
+            "Energia": {"emoji": "⚡", "setor": "Eletricidade, gás, água e esgoto", "valor": 5000, "regiao": "Recife"},
+            "Agro": {"emoji": "🌾", "setor": "Agropecuária", "valor": 3000, "regiao": "Campo Grande"},
+            "Tech": {"emoji": "💻", "setor": "Serviços", "valor": 8000, "regiao": "São Paulo"},
+            "Infra": {"emoji": "🏗️", "setor": "Construção", "valor": 4000, "regiao": "Manaus"}
+        }
+
+        # Cards clicáveis em grid 2x2
+        col1, col2 = st.columns(2)
+        for i, (nome, cenario) in enumerate(cenarios.items()):
+            col = col1 if i % 2 == 0 else col2
+            with col:
+                if st.button(
+                    f"{cenario['emoji']}\n{nome}",
+                    key=f"cenario_{nome}",
+                    use_container_width=True,
+                    help=f"{cenario['setor']} em {cenario['regiao']}"
+                ):
+                    # Aplicar cenário
+                    st.session_state.regiao_ativa = cenario['regiao']
+                    aplicar_cenario_automatico(cenario, df_economia)
+                    st.rerun()
+
+        st.markdown("---")
+
+        # Botões de ação principais
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("🚀 **SIMULAR**",
+                        type="primary",
+                        use_container_width=True,
+                        disabled=st.session_state.regiao_ativa is None):
+                if st.session_state.regiao_ativa:
+                    executar_simulacao_nova(st.session_state.regiao_ativa, setor_selecionado, valor_investimento, df_economia)
+                    st.rerun()
+
+        with col2:
+            if st.button("➕ **NOVA**",
+                        type="secondary",
+                        use_container_width=True):
+                # Reset para nova simulação
+                st.session_state.regiao_ativa = None
+                st.rerun()
+
+        # Seção de status atual
+        if st.session_state.regiao_ativa:
+            st.markdown(f"""
+            <div style="background: #ecfdf5; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
+                <small style="color: #059669; font-weight: 600;">
+                    📍 Região: {st.session_state.regiao_ativa}<br>
+                    🏭 Setor: {setor_selecionado[:15]}...<br>
+                    💰 Valor: R$ {valor_investimento:,.0f}M
+                </small>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background: #fef3c7; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
+                <small style="color: #d97706;">
+                    👆 Clique em uma região no mapa
+                </small>
+            </div>
+            """, unsafe_allow_html=True)
+
+    else:  # st.session_state.sidebar_state == 'collapsed'
+        # Botão para expandir (modo compacto)
+        if st.button("➡️", use_container_width=True, help="Mostrar controles de simulação"):
+            st.session_state.sidebar_state = 'expanded'
+            st.rerun()
+        
+        # Informação compacta sobre região ativa (se houver)
+        if st.session_state.regiao_ativa:
+            st.markdown(f"""
+            <div style="background: #ecfdf5; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; text-align: center;">
+                <div style="font-size: 0.7rem; color: #059669; font-weight: 600;">
+                    📍 {st.session_state.regiao_ativa[:15]}...
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Contador de simulações (se houver)
+        if len(st.session_state.simulacoes) > 0:
+            simulacoes_ativas = len([s for s in st.session_state.simulacoes if s['ativa']])
+            st.markdown(f"""
+            <div style="background: #dbeafe; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; text-align: center;">
+                <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600;">
+                    📊 {simulacoes_ativas} ativa(s)
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 def criar_painel_resultados():
     """Nova coluna de resultados compacta e organizada"""
@@ -1514,6 +1572,8 @@ def main():
         st.session_state.simulacoes = []
     if 'contador_simulacoes' not in st.session_state:
         st.session_state.contador_simulacoes = 0
+    if 'sidebar_state' not in st.session_state:
+        st.session_state.sidebar_state = 'expanded'  # 'expanded' ou 'collapsed'
 
     # Manter compatibilidade com código existente
     # A simulação "ativa" é a última da lista ou None se não houver
@@ -1538,10 +1598,15 @@ def main():
         criar_secao_validacao_modelo()
 
 def simulacao_principal_tab(gdf, df_economia):
-    """Aba principal com simulação e mapa - Nova arquitetura 3 colunas"""
+    """Aba principal com simulação e mapa - Arquitetura dinâmica com sidebar colapsável"""
 
-    # Layout principal: Sidebar (20%) + Mapa (48%) + Resultados (32%)
-    col_sidebar, col_mapa, col_resultados = st.columns([0.2, 0.48, 0.32])
+    # Layout dinâmico baseado no estado da sidebar
+    if st.session_state.sidebar_state == 'expanded':
+        # Layout normal: Sidebar (20%) + Mapa (48%) + Resultados (32%)
+        col_sidebar, col_mapa, col_resultados = st.columns([0.2, 0.48, 0.32])
+    else:
+        # Layout colapsado: Botão (5%) + Mapa (60%) + Resultados (35%)
+        col_sidebar, col_mapa, col_resultados = st.columns([0.05, 0.6, 0.35])
 
     # ==============================================================================
     # SIDEBAR ESQUERDA: CONTROLES E INSTRUÇÕES
@@ -1550,110 +1615,160 @@ def simulacao_principal_tab(gdf, df_economia):
         criar_sidebar_controles(df_economia)
 
     # ==============================================================================
-    # COLUNA CENTRAL: MAPA INTERATIVO
+    # COLUNA CENTRAL: MAPA INTERATIVO (COM TRATAMENTO ROBUSTO DE ERROS)
     # ==============================================================================
     with col_mapa:
-        # Título simples do mapa
-        st.markdown("### 🗺️ Mapa Interativo do Brasil")
+        try:
+            st.markdown("### 🗺️ Mapa Interativo do Brasil")
 
-        # Criar mapa
-        mapa = folium.Map(
-            location=[-15.0, -55.0],
-            zoom_start=4,
-            tiles="CartoDB positron",
-            prefer_canvas=True
-        )
-
-        # Camadas de múltiplas simulações
-        simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
-
-        if len(simulacoes_ativas) > 0:
-            for i, simulacao in enumerate(simulacoes_ativas):
-                # Agregar resultados por região para esta simulação
-                resultados_agregados = simulacao['resultados'].groupby('regiao')['impacto_producao'].sum().reset_index()
-
-                # Merge com geometrias
-                gdf_com_dados = gdf.merge(
-                    resultados_agregados,
-                    left_on='NM_RGINT',
-                    right_on='regiao',
-                    how='left'
-                ).fillna(0)
-
-                # Choropleth para esta simulação com cor específica
-                if gdf_com_dados['impacto_producao'].max() > 0:
-                    # Converter cor hex para gradiente
-                    import colorsys
-                    hex_color = simulacao['cor'].lstrip('#')
-                    rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-                    h, s, v = colorsys.rgb_to_hsv(rgb[0]/255, rgb[1]/255, rgb[2]/255)
-
-                    # Criar gradiente baseado na cor da simulação
-                    color_scale = ['#ffffff', simulacao['cor']]
-
-                    choro = folium.Choropleth(
-                        geo_data=gdf_com_dados,
-                        data=gdf_com_dados,
-                        columns=['NM_RGINT', 'impacto_producao'],
-                        key_on='feature.properties.NM_RGINT',
-                        fill_color='viridis',
-                        fill_opacity=0.6 - (i * 0.1),  # Reduzir opacidade para sobreposições
-                        line_opacity=0.4,
-                        legend_name=f'{simulacao["nome"][:30]}... (R$ Mi)',
-                        name=f'layer_{simulacao["id"]}'
-                    )
-                    choro.add_to(mapa)
-
-            # Adicionar controle de layers se houver múltiplas simulações
-            if len(simulacoes_ativas) > 1:
-                folium.LayerControl(collapsed=False).add_to(mapa)
-
-        # Camada de interação
-        folium.GeoJson(
-            gdf,
-            style_function=lambda feature: {
-                'fillColor': '#FFD700' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'transparent',
-                'color': '#FF4500' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else '#333333',
-                'weight': 4 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 1,
-                'fillOpacity': 0.7 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 0,
-                'opacity': 1
-            },
-            tooltip=folium.GeoJsonTooltip(
-                fields=['NM_RGINT'],
-                aliases=['Região:'],
-                localize=True,
-                sticky=True,
-                labels=True,
-                style="background-color: white; border: 2px solid black; border-radius: 3px; box-shadow: 3px;"
+            # Criar mapa base
+            mapa = folium.Map(
+                location=[-15.0, -55.0],
+                zoom_start=4,
+                tiles="CartoDB positron",
+                prefer_canvas=True
             )
-        ).add_to(mapa)
 
-        # Renderizar mapa com altura maior para simetria visual
-        map_data = st_folium(
-            mapa,
-            use_container_width=True,
-            height=650,
-            returned_objects=["last_object_clicked_tooltip"]
-        )
+            # Camadas de múltiplas simulações com validação robusta
+            simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
 
-        # Detecção de cliques
-        if map_data and map_data.get('last_object_clicked_tooltip'):
-            tooltip_data = map_data['last_object_clicked_tooltip']
-            nova_regiao = None
+            if len(simulacoes_ativas) > 0:
+                for i, simulacao in enumerate(simulacoes_ativas):
+                    try:
+                        # Validação de dados da simulação
+                        resultados_df = simulacao['resultados']
+                        if not isinstance(resultados_df, pd.DataFrame):
+                            continue
+                        
+                        if 'regiao' not in resultados_df.columns or 'impacto_producao' not in resultados_df.columns:
+                            continue
 
-            if isinstance(tooltip_data, dict):
-                nova_regiao = tooltip_data.get('Região:')
-            elif isinstance(tooltip_data, str):
-                if 'Região:' in tooltip_data:
-                    nova_regiao = tooltip_data.split('Região:')[1].strip()
-                else:
-                    nova_regiao = tooltip_data.strip()
+                        # Agregar resultados por região
+                        resultados_agregados = resultados_df.groupby('regiao')['impacto_producao'].sum().reset_index()
 
-            if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
-                st.session_state.regiao_ativa = nova_regiao
-                st.rerun()
+                        # Garantir que as colunas de junção são do mesmo tipo e limpas
+                        gdf_temp = gdf.copy()
+                        gdf_temp['NM_RGINT_JOIN'] = gdf_temp['NM_RGINT'].astype(str).str.strip()
+                        resultados_agregados['regiao_JOIN'] = resultados_agregados['regiao'].astype(str).str.strip()
 
-        # Perfil compacto da região selecionada
+                        # Merge com validação
+                        gdf_com_dados = gdf_temp.merge(
+                            resultados_agregados,
+                            left_on='NM_RGINT_JOIN',
+                            right_on='regiao_JOIN',
+                            how='left'
+                        ).fillna(0)
+
+                        # Garantir que a coluna de dados é numérica
+                        gdf_com_dados['impacto_producao'] = pd.to_numeric(
+                            gdf_com_dados['impacto_producao'], errors='coerce'
+                        ).fillna(0)
+
+                        # Só criar choropleth se há dados válidos
+                        if not gdf_com_dados.empty and gdf_com_dados['impacto_producao'].sum() > 0:
+                            folium.Choropleth(
+                                geo_data=gdf_com_dados,
+                                data=gdf_com_dados,
+                                columns=['NM_RGINT', 'impacto_producao'],
+                                key_on='feature.properties.NM_RGINT',
+                                fill_color='YlOrRd',  # Usando gradiente mais seguro
+                                fill_opacity=max(0.3, 0.7 - (i * 0.1)),  # Garantir opacidade mínima
+                                line_opacity=0.4,
+                                legend_name=f"Sim {i+1}: Impacto (R$ Mi)",
+                                name=f'layer_{simulacao["id"]}'
+                            ).add_to(mapa)
+
+                    except Exception as e:
+                        # Log do erro específico desta simulação, mas continua com as outras
+                        print(f"Erro ao renderizar simulação {simulacao.get('id', 'desconhecida')}: {e}")
+                        continue
+
+                # Adicionar controle de layers se houver múltiplas simulações
+                if len(simulacoes_ativas) > 1:
+                    folium.LayerControl(collapsed=False).add_to(mapa)
+
+            # Camada de interação (sempre presente)
+            folium.GeoJson(
+                gdf,
+                style_function=lambda feature: {
+                    'fillColor': '#FFD700' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'transparent',
+                    'color': '#FF4500' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else '#333333',
+                    'weight': 4 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 1,
+                    'fillOpacity': 0.7 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 0,
+                    'opacity': 1
+                },
+                tooltip=folium.GeoJsonTooltip(
+                    fields=['NM_RGINT'],
+                    aliases=['Região:'],
+                    localize=True,
+                    sticky=True,
+                    labels=True,
+                    style="background-color: white; border: 2px solid black; border-radius: 3px; box-shadow: 3px;"
+                )
+            ).add_to(mapa)
+
+            # Renderizar mapa
+            map_data = st_folium(
+                mapa,
+                use_container_width=True,
+                height=650,
+                returned_objects=["last_object_clicked_tooltip"]
+            )
+
+            # Detecção de cliques com validação
+            if map_data and map_data.get('last_object_clicked_tooltip'):
+                tooltip_data = map_data['last_object_clicked_tooltip']
+                nova_regiao = None
+
+                try:
+                    if isinstance(tooltip_data, dict):
+                        nova_regiao = tooltip_data.get('Região:')
+                    elif isinstance(tooltip_data, str):
+                        if 'Região:' in tooltip_data:
+                            nova_regiao = tooltip_data.split('Região:')[1].strip()
+                        else:
+                            nova_regiao = tooltip_data.strip()
+
+                    if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
+                        st.session_state.regiao_ativa = nova_regiao
+                        st.rerun()
+                except Exception as e:
+                    print(f"Erro ao processar clique no mapa: {e}")
+
+        except Exception as e:
+            # Fallback: mostrar erro amigável e mapa básico
+            st.error(f"⚠️ Erro ao renderizar o mapa: {str(e)}")
+            st.warning("Tentando carregar mapa básico...")
+            
+            try:
+                # Mapa de emergência sem dados de simulação
+                mapa_basico = folium.Map(
+                    location=[-15.0, -55.0],
+                    zoom_start=4,
+                    tiles="CartoDB positron"
+                )
+                
+                folium.GeoJson(
+                    gdf,
+                    style_function=lambda feature: {
+                        'fillColor': 'transparent',
+                        'color': '#333333',
+                        'weight': 1,
+                        'fillOpacity': 0
+                    },
+                    tooltip=folium.GeoJsonTooltip(fields=['NM_RGINT'], aliases=['Região:'])
+                ).add_to(mapa_basico)
+                
+                st_folium(mapa_basico, use_container_width=True, height=650)
+                
+            except Exception as e2:
+                st.error(f"❌ Não foi possível carregar nem o mapa básico: {str(e2)}")
+            
+            # Imprimir erro completo no console para depuração
+            import traceback
+            traceback.print_exc()
+
+        # Perfil compacto da região selecionada (fora do try principal)
         if st.session_state.regiao_ativa is not None:
             with st.expander(f"📍 {st.session_state.regiao_ativa}", expanded=True):
                 dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
