@@ -25,553 +25,47 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Modern CSS Design System
+# CSS Mínimo e Seguro para toques de design premium
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    /* === CSS VARIABLES & DESIGN TOKENS === */
-    :root {
-        --primary-50: #eff6ff;
-        --primary-100: #dbeafe;
-        --primary-500: #3b82f6;
-        --primary-600: #2563eb;
-        --primary-700: #1d4ed8;
-        --primary-900: #1e3a8a;
-
-        --gray-50: #f8fafc;
-        --gray-100: #f1f5f9;
-        --gray-200: #e2e8f0;
-        --gray-300: #cbd5e1;
-        --gray-400: #94a3b8;
-        --gray-500: #64748b;
-        --gray-600: #475569;
-        --gray-700: #334155;
-        --gray-800: #1e293b;
-        --gray-900: #0f172a;
-
-        --success-500: #10b981;
-        --warning-500: #f59e0b;
-        --error-500: #ef4444;
-
-        --radius-sm: 6px;
-        --radius-md: 8px;
-        --radius-lg: 12px;
-        --radius-xl: 16px;
-
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-
-        --transition-fast: 150ms ease-in-out;
-        --transition-normal: 250ms ease-in-out;
-    }
-
-    /* === GLOBAL STYLES === */
-    .stApp {
-        background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    .main .block-container {
-        background-color: transparent;
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-        max-width: none;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
-    /* === TYPOGRAPHY === */
-    h1, h2, h3, h4, h5, h6 {
+    /* Define a fonte para toda a aplicação */
+    html, body, [class*="st-"], .st-emotion-cache {
         font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        color: var(--gray-900) !important;
-        letter-spacing: -0.025em;
     }
 
-    /* Force dark text for all Streamlit elements */
-    .stMarkdown, .stMarkdown p, .stMarkdown div,
-    .stText, p, span, div,
-    .streamlit-container, .block-container,
-    [data-testid="stMarkdownContainer"],
-    [data-testid="stText"] {
-        color: var(--gray-900) !important;
-    }
-
-    /* Ensure main content has dark text */
-    .main .block-container * {
-        color: var(--gray-900) !important;
-    }
-
-    /* Override any white text */
-    .main * {
-        color: var(--gray-900) !important;
-    }
-
-    /* Specific fixes for Streamlit components */
-    [data-testid="metric-container"],
-    [data-testid="metric-container"] *,
-    .streamlit-expanderHeader,
-    .streamlit-expander *,
-    .stSelectbox label,
-    .stNumberInput label,
-    .stSlider label,
-    .element-container *,
-    .row-widget *,
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-        color: var(--gray-900) !important;
-    }
-
-    .app-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .app-subtitle {
-        font-size: 1.125rem;
-        color: var(--gray-600);
-        text-align: center;
-        margin-bottom: 2rem;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-        line-height: 1.6;
-    }
-
-    /* === CARD SYSTEM === */
+    /* Estilo para os cards - usando uma classe customizada */
     .card {
         background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        transition: all var(--transition-normal);
-        overflow: hidden;
-    }
-
-    .card:hover {
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-        color: white !important;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        border: 1px solid #e2e8f0;
         padding: 1.5rem;
-        font-weight: 600;
-        font-size: 1.125rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
+        margin-bottom: 1rem;
     }
 
-    .card-header * {
-        color: white !important;
-    }
-
-    .card-body {
-        padding: 1.5rem;
-        color: var(--gray-900) !important;
-    }
-
-    .card-body * {
-        color: var(--gray-900) !important;
-    }
-
-    .card-compact {
-        padding: 1rem;
-        color: var(--gray-900) !important;
-    }
-
-    /* === METRIC CARDS === */
-    .metric-card {
-        background: white;
-        border-radius: var(--radius-lg);
-        padding: 1.5rem;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        transition: all var(--transition-normal);
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-    }
-
-    .metric-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-xl);
-    }
-
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--gray-900);
-        margin-bottom: 0.25rem;
-    }
-
-    .metric-label {
-        font-size: 0.875rem;
-        color: var(--gray-600);
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .metric-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.75rem;
-        opacity: 0.8;
-    }
-
-    /* === SECTION STYLING === */
+    /* Estilo para os cabeçalhos de seção */
     .section-header {
         background: white;
-        border-radius: var(--radius-lg);
-        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
         margin: 2rem 0 1rem 0;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-        border-left: 4px solid var(--primary-500);
+        border-left: 4px solid #3b82f6;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     }
-
+    
     .section-title {
         font-size: 1.25rem;
         font-weight: 600;
-        color: var(--gray-900);
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
     }
 
-    /* === STREAMLIT COMPONENT OVERRIDES === */
-    .stSelectbox > div > div {
-        background-color: white !important;
-        border: 2px solid var(--gray-200);
-        border-radius: var(--radius-md);
-        transition: all var(--transition-fast);
-    }
-
-    .stSelectbox > div > div:focus-within {
-        border-color: var(--primary-500);
-        box-shadow: 0 0 0 3px var(--primary-50);
-    }
-
-    /* Fix dropdown styling - Force white background always */
-    .stSelectbox div[data-baseweb="select"],
-    .stSelectbox div[data-baseweb="select"] > div,
-    .stSelectbox div[data-baseweb="select"] > div > div,
-    .stSelectbox div[data-baseweb="select"] > div > div > div,
-    .stSelectbox [data-baseweb="select"] .css-1uccc91-singleValue,
-    .stSelectbox [data-baseweb="select"] .css-1wa3eu0-placeholder,
-    .stSelectbox [data-baseweb="select"] .css-1dimb5e-singleValue,
-    .stSelectbox [data-baseweb="select"] .css-1n7v3ny-option,
-    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"],
-    .stSelectbox [data-baseweb="select"] [data-baseweb="select-value"],
-    .stSelectbox [data-baseweb="select"] span {
-        background-color: white !important;
-        color: #1e293b !important;
-        background: white !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-    }
-
-    /* Dropdown container - super specific */
-    .stSelectbox div[data-baseweb="select"] {
-        background-color: white !important;
-        background: white !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-    }
-
-    /* Value display area */
-    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"],
-    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"] > div {
-        background-color: white !important;
-        background: white !important;
-        color: #1e293b !important;
-    }
-
-    /* All possible text elements */
-    .stSelectbox [data-baseweb="select"] span,
-    .stSelectbox [data-baseweb="select"] div,
-    .stSelectbox [data-baseweb="select"] p {
-        color: #1e293b !important;
-        background-color: transparent !important;
-    }
-
-    /* Fix dropdown options list */
-    div[role="listbox"],
-    .stSelectbox div[data-baseweb="popover"] > div,
-    .stSelectbox div[data-baseweb="popover"] > div > div {
-        background-color: white !important;
-        background: white !important;
-        color: #1e293b !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
-    }
-
-    /* Individual options */
-    div[role="option"],
-    .stSelectbox li[role="option"],
-    .stSelectbox div[role="option"] {
-        background-color: white !important;
-        background: white !important;
-        color: #1e293b !important;
-        padding: 0.75rem 1rem !important;
-    }
-
-    /* Hover state for options */
-    div[role="option"]:hover,
-    .stSelectbox li[role="option"]:hover,
-    .stSelectbox div[role="option"]:hover {
-        background-color: #f1f5f9 !important;
-        background: #f1f5f9 !important;
-        color: #1e293b !important;
-    }
-
-    /* Selected option */
-    div[role="option"][aria-selected="true"],
-    .stSelectbox li[role="option"][aria-selected="true"] {
-        background-color: #dbeafe !important;
-        background: #dbeafe !important;
-        color: #1e40af !important;
-    }
-
-    /* Force override for all selectbox states */
-    .stSelectbox * {
-        background-color: white !important;
-        color: #1e293b !important;
-    }
-
-    /* Exception for icons and hover states */
-    .stSelectbox *:hover {
-        background-color: #f1f5f9 !important;
-        color: #1e293b !important;
-    }
-
-    .stNumberInput > div > div > input {
-        background-color: white;
-        border: 2px solid var(--gray-200);
-        border-radius: var(--radius-md);
-        transition: all var(--transition-fast);
-    }
-
-    .stNumberInput > div > div > input:focus {
-        border-color: var(--primary-500);
-        box-shadow: 0 0 0 3px var(--primary-50);
-    }
-
-    .stButton > button {
-        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    /* Garante que os botões primários tenham texto branco */
+    .stButton > button[kind="primary"] {
         color: white;
-        border: none;
-        border-radius: var(--radius-md);
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        transition: all var(--transition-fast);
-        box-shadow: var(--shadow-sm);
     }
 
-    .stButton > button:hover {
-        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-        box-shadow: var(--shadow-md);
-        transform: translateY(-1px);
-    }
-
-    .stTabs [data-baseweb="tab-list"] {
-        background: white;
-        border-radius: 12px;
-        padding: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        border: 1px solid #e2e8f0;
-        margin-bottom: 1.5rem;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        color: #64748b;
-        font-weight: 500;
-        font-size: 1rem;
-        transition: all 0.2s ease;
-        padding: 0.75rem 1.5rem;
-        min-width: 200px;
-        text-align: center;
-    }
-
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #f1f5f9;
-        color: #334155;
-    }
-
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
-        box-shadow: 0 2px 4px -1px rgb(59 130 246 / 0.3);
-    }
-
-    /* === RESPONSIVE DESIGN === */
-    @media (max-width: 768px) {
-        .main .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-
-        .app-title {
-            font-size: 2rem;
-        }
-
-        .metric-card {
-            padding: 1rem;
-        }
-
-        .card-header, .card-body {
-            padding: 1rem;
-        }
-    }
-
-    /* === ACCESSIBILITY === */
-    .stButton > button:focus,
-    .stSelectbox > div > div:focus-within,
-    .stNumberInput > div > div > input:focus {
-        outline: 2px solid var(--primary-500);
-        outline-offset: 2px;
-    }
-
-    /* === ANIMATIONS === */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.5s ease-out;
-    }
-
-    .animate-slide-in {
-        animation: slideIn 0.4s ease-out;
-    }
-
-    /* === LOADING STATES === */
-    .loading-skeleton {
-        background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-    }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-
-    /* === ENHANCED VISUAL ELEMENTS === */
-    .stExpander {
-        border: 1px solid var(--gray-200);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-sm);
-        margin: 1rem 0;
-    }
-
-    .stExpander > details > summary {
-        background: var(--gray-50);
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        padding: 1rem 1.5rem;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    .stExpander[data-testid="expanderContainer"] {
-        background: white;
-    }
-
-    /* Success/Warning/Error styling */
-    .stSuccess {
-        background: var(--success-500);
-        color: white;
-        border-radius: var(--radius-md);
-        border: none;
-    }
-
-    .stWarning {
-        background: var(--warning-500);
-        color: white;
-        border-radius: var(--radius-md);
-        border: none;
-    }
-
-    .stError {
-        background: var(--error-500);
-        color: white;
-        border-radius: var(--radius-md);
-        border: none;
-    }
-
-    .stInfo {
-        background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-        border: 1px solid var(--primary-200);
-        border-radius: var(--radius-md);
-        color: var(--primary-800);
-    }
-
-    /* Map container styling */
-    .folium-map {
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-    }
-
-    /* Progress indicators */
-    .stProgress > div > div {
-        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-        border-radius: var(--radius-sm);
-    }
-
-    /* Data frame styling */
-    .stDataFrame {
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-    }
-
-    /* Balloons animation enhancement */
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-    }
-
-    .floating {
-        animation: float 2s ease-in-out infinite;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -962,7 +456,7 @@ def criar_controles_simulacao_sidebar(df_economia):
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-def gerenciar_simulacoes():
+def gerenciar_simulacoes(df_economia):
     """Interface para gerenciar múltiplas simulações"""
     if len(st.session_state.simulacoes) == 0:
         return
@@ -1038,7 +532,7 @@ def gerenciar_simulacoes():
     # Funcionalidades avançadas
     if len(st.session_state.simulacoes) > 0:
         st.markdown("---")
-        criar_funcionalidades_avancadas()
+        criar_funcionalidades_avancadas(df_economia)
 
 def criar_sidebar_controles(df_economia):
     """Nova sidebar com controles sem dropdown - só radio buttons e cards"""
@@ -1267,10 +761,10 @@ def aplicar_cenario_automatico(cenario, df_economia):
 
 def executar_simulacao_nova(regiao, setor, valor, df_economia):
     """Executa uma nova simulação e adiciona à lista"""
-    resultados = simular_choque_economico(
-        regiao_origem=regiao,
-        setor_investimento=setor,
-        valor_investimento=valor
+    resultados, _ = executar_simulacao_avancada(
+        df_economia=df_economia,
+        valor_choque=valor,
+        setor_choque=setor
     )
 
     if resultados is not None:
@@ -1287,6 +781,12 @@ def executar_simulacao_nova(regiao, setor, valor, df_economia):
             'valor': valor,
             'timestamp': datetime.now(),
             'resultados': resultados,
+            'parametros': {  # Adicionando a chave que faltava
+                'regiao_origem': regiao,
+                'setor_investimento': setor,
+                'valor_investimento': valor,
+                'timestamp': datetime.now()
+            },
             'cor': cor_simulacao,
             'ativa': True
         }
@@ -1375,7 +875,7 @@ def criar_secao_multi_simulacao_simples():
     simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
     st.markdown(f"**📊 Total:** {len(st.session_state.simulacoes)} | **Ativas:** {len(simulacoes_ativas)}")
 
-def criar_funcionalidades_avancadas():
+def criar_funcionalidades_avancadas(df_economia):
     """Implementa funcionalidades avançadas: export, cenários predefinidos, etc."""
     st.markdown("### ⚙️ Funcionalidades Avançadas")
 
@@ -1446,7 +946,7 @@ def criar_funcionalidades_avancadas():
             st.session_state.regiao_ativa = cenario["regiao"]
 
             # Simular o cenário
-            simular_cenario_predefinido(cenario)
+            simular_cenario_predefinido(cenario, df_economia)
             st.success(f"✅ Cenário '{cenario_selecionado}' aplicado com sucesso!")
             st.rerun()
 
@@ -1528,7 +1028,7 @@ def gerar_comparacao_export():
     df_comparacao = pd.DataFrame(comparacao_data)
     return df_comparacao.to_csv(index=False)
 
-def simular_cenario_predefinido(cenario):
+def simular_cenario_predefinido(cenario, df_economia):
     """Executa simulação com parâmetros predefinidos do cenário"""
     # Buscar dados da região do cenário
     dados_regiao = df_economia[df_economia['regiao'] == cenario['regiao']].copy()
@@ -1551,10 +1051,10 @@ def simular_cenario_predefinido(cenario):
         setor_encontrado = setores_disponiveis[0]
 
     # Executar simulação
-    resultados = simular_choque_economico(
-        regiao_origem=cenario['regiao'],
-        setor_investimento=setor_encontrado,
-        valor_investimento=cenario['valor']
+    resultados, _ = executar_simulacao_avancada(
+        df_economia=df_economia,
+        valor_choque=cenario['valor'],
+        setor_choque=setor_encontrado
     )
 
     if resultados is not None:
@@ -1571,6 +1071,12 @@ def simular_cenario_predefinido(cenario):
             'valor': cenario['valor'],
             'timestamp': datetime.now(),
             'resultados': resultados,
+            'parametros': {  # Adicionando a chave que faltava
+                'regiao_origem': cenario['regiao'],
+                'setor_investimento': setor_encontrado,
+                'valor_investimento': cenario['valor'],
+                'timestamp': datetime.now()
+            },
             'cor': cor_simulacao,
             'ativa': True
         }
