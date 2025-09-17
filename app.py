@@ -70,6 +70,56 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
+# LÓGICA DE SIMULAÇÃO AVANÇADA
+# ==============================================================================
+
+def calculate_log_bins(series, num_classes=5):
+    """
+    Helper robusto para calcular bins logarítmicos.
+    Garante que sempre retornará o número correto de bins/labels.
+    """
+    # Remove valores zero ou negativos e outliers extremos para um binning mais estável
+    series_positive = series[(series > 0) & (series < series.quantile(0.99))]
+    
+    # Se houver muito poucos valores únicos, cria bins simples
+    if series_positive.nunique() < num_classes:
+        bins = np.linspace(series.min(), series.max(), num=num_classes + 1)
+    else:
+        # Binning logarítmico para a maioria dos casos
+        bins = np.logspace(
+            np.log10(max(1, series_positive.min())), # Evita log de zero
+            np.log10(series_positive.max()),
+            num=num_classes
+        )
+        # Garante que o valor máximo absoluto seja incluído no último bin
+        bins = np.append(bins, series.max())
+
+    # Adiciona o zero no início e remove duplicados
+    bins = np.insert(bins, 0, 0)
+    bins = np.unique(bins)
+    
+    # Se, após tudo, ainda não tivermos bins suficientes, cria linearmente
+    if len(bins) < num_classes:
+        bins = np.linspace(series.min(), series.max(), num=num_classes + 1)
+
+    return bins.tolist()
+
+def calcular_distancias(gdf, regiao_origem_nome):
+    """Calcula a distância da região de origem para todas as outras."""
+    try:
+        # Pega a geometria (polígono) da região de origem
+        origem_geom = gdf.loc[gdf['NM_RGINT'] == regiao_origem_nome, 'geometry'].iloc[0]
+        # Calcula o ponto central (centroide)
+        origem_centroid = origem_geom.centroid
+        
+        # Calcula a distância do centroide de origem para o centroide de todas as outras regiões
+        distancias = gdf['geometry'].apply(lambda geom: origem_centroid.distance(geom.centroid))
+        return distancias
+    except (IndexError, AttributeError):
+        # Se a região não for encontrada ou houver problema, retorna distâncias nulas
+        return pd.Series(0.0, index=gdf.index)
+
+# ==============================================================================
 # MODELO ECONÔMICO AVANÇADO (LEONTIEF INPUT-OUTPUT)
 # ==============================================================================
 
@@ -115,15 +165,36 @@ matriz_identidade = np.identity(len(setores))
 matriz_L = np.linalg.inv(matriz_identidade - matriz_a.values)
 matriz_L_df = pd.DataFrame(matriz_L, index=setores, columns=setores)
 
+# Coeficientes de VAB por setor (baseados na estrutura da matriz A)
+coef_vab_por_setor = pd.Series({
+    'Agropecuária': 0.699,  # 1 - soma da coluna Agropecuária da matriz_a
+    'Indústria': 0.291,     # 1 - soma da coluna Indústria
+    'Construção': 0.985,    # 1 - soma da coluna Construção (usa poucos insumos de si mesma)
+    'Serviços': 0.573       # 1 - soma da coluna Serviços
+})
+
+# Coeficiente de impostos sobre VAB (carga tributária média)
+coef_impostos_sobre_vab = 0.18  # 18% - estimativa da carga tributária brasileira
+
+# Coeficientes de Emprego (Empregos por R$ Milhão de Produção) - VERSÃO CIENTIFICAMENTE CONSERVADORA
+coef_emprego_por_setor = pd.Series({
+    'Agropecuária': 12.5, # Média entre agricultura familiar e agronegócio de larga escala
+    'Indústria':     8.1, # Reflete a maior produtividade e automação da indústria
+    'Construção':   17.6, # Permanece o mais intensivo em mão-de-obra
+    'Serviços':     14.8  # Média de um setor muito heterogêneo (de TI a comércio)
+})
+
 # Parâmetros do modelo
 parametros_modelo = {
     'ano_base': 2017,
     'fonte_matriz': 'Tabela de Recursos e Usos (TRU) - IBGE',
     'metodologia': 'Modelo Input-Output de Leontief',
-    'regioes_cobertas': 133,
+    'regioes_imediatas_cobertas': 133,
     'setores_economicos': 4,
     'tipo_analise': 'Impactos diretos, indiretos e induzidos',
     'unidade_monetaria': 'Milhões de Reais (R$ Mi)',
+    'coef_vab_medio': coef_vab_por_setor.mean(),
+    'carga_tributaria': coef_impostos_sobre_vab,
     'data_processamento': datetime.now().strftime('%d/%m/%Y %H:%M')
 }
 
@@ -154,7 +225,7 @@ def carregar_dados_geograficos():
 
 @st.cache_data(show_spinner="📊 Construindo base econômica sintética...")
 def gerar_dados_economicos(_gdf):
-    """Gera dados econômicos sintéticos realistas para as 133 regiões."""
+    """Gera dados econômicos sintéticos realistas para as 133 regiões imediatas."""
     np.random.seed(42)  # Resultados consistentes
     regioes = _gdf['NM_RGINT'].tolist()
 
@@ -188,37 +259,99 @@ def gerar_dados_economicos(_gdf):
 # LÓGICA DE SIMULAÇÃO AVANÇADA
 # ==============================================================================
 
-def executar_simulacao_avancada(df_economia, valor_choque, setor_choque):
+def executar_simulacao_avancada(df_economia, gdf, valor_choque, setor_choque, regiao_origem):
     """
-    Executa simulação completa com modelo Leontief
-    Retorna impactos desagregados por setor e região
+    Executa simulação completa com modelo Leontief e distribuição gravitacional.
     """
-    # 1. Vetor de choque inicial
+    # --- PARTE 1: CÁLCULO DO IMPACTO NACIONAL (lógica de Leontief, inalterada) ---
     setor_idx = setores.index(setor_choque)
     vetor_choque = np.zeros(len(setores))
     vetor_choque[setor_idx] = valor_choque
+    impactos_setoriais_nacionais = matriz_L @ vetor_choque
+    
+    # --- PARTE 2: DISTRIBUIÇÃO ESPACIAL GRAVITACIONAL (Lógica Nova e Corrigida) ---
+    
+    # Calcula o "efeito cascata" (ripple effect) - o impacto que se espalha pela economia
+    ripple_effect_nacional = impactos_setoriais_nacionais.sum() - valor_choque
+    
+    # Inicializa um DataFrame de resultados com as colunas que vamos precisar
+    df_resultados = df_economia.copy()
+    df_resultados['impacto_producao'] = 0.0
+    
+    # --- Passo 2a: Atribuir o impacto DIRETO 100% à região de origem ---
+    mask_origem = (df_resultados['regiao'] == regiao_origem) & (df_resultados['setor'] == setor_choque)
+    df_resultados.loc[mask_origem, 'impacto_producao'] = valor_choque
+    
+    # --- Passo 2b: Preparar pesos para distribuir o "efeito cascata" (LÓGICA SUAVIZADA) ---
+    # Calcular distâncias geográficas a partir da origem
+    distancias = calcular_distancias(gdf, regiao_origem)
+    
+    # --- MUDANÇA NO FATOR DE ATRITO ---
+    # Um fator de 1.0 representa um decaimento mais forte e realista.
+    fator_atrito = 1.0 
+    fator_proximidade = np.exp(-fator_atrito * distancias)
+    
+    # Mapear o fator de proximidade para cada linha do DataFrame de resultados
+    mapa_proximidade = pd.Series(fator_proximidade.values, index=gdf['NM_RGINT'])
+    df_resultados['proximidade'] = df_resultados['regiao'].map(mapa_proximidade)
+    
+    # Criar um peso final combinando tamanho econômico (`share_nacional`) e proximidade
+    df_resultados['peso_final'] = df_resultados['share_nacional'] * df_resultados['proximidade']
+    
+    # --- Passo 2c: Distribuir o "efeito cascata" usando os novos pesos ---
+    for setor_idx, setor_nome in enumerate(setores):
+        # O efeito cascata de cada setor
+        ripple_setor = impactos_setoriais_nacionais[setor_idx]
+        if setor_idx == setores.index(setor_choque):
+            ripple_setor -= valor_choque # Subtrai o choque direto que já alocamos
+        
+        if ripple_setor > 0:
+            # Filtra para o setor atual
+            mask_setor = df_resultados['setor'] == setor_nome
+            
+            # Normaliza os pesos para que a soma seja 1 (dentro do setor)
+            soma_pesos_setor = df_resultados.loc[mask_setor, 'peso_final'].sum()
+            if soma_pesos_setor > 0:
+                pesos_normalizados = df_resultados.loc[mask_setor, 'peso_final'] / soma_pesos_setor
+                
+                # Distribui o ripple do setor e SOMA ao impacto já existente (o direto)
+                impacto_distribuido = pesos_normalizados * ripple_setor
+                df_resultados.loc[mask_setor, 'impacto_producao'] += impacto_distribuido
 
-    # 2. Calcular impactos setoriais nacionais usando matriz Leontief
-    impactos_setoriais = matriz_L @ vetor_choque
+    # --- PARTE 3: CÁLCULO DOS INDICADORES FINAIS (VAB, Impostos, Empregos) ---
+    # (Usando os aprimoramentos que definimos anteriormente)
+    df_resultados['coef_vab'] = df_resultados['setor'].map(coef_vab_por_setor)
+    df_resultados['impacto_vab'] = df_resultados['impacto_producao'] * df_resultados['coef_vab']
+    df_resultados['impacto_impostos'] = df_resultados['impacto_vab'] * coef_impostos_sobre_vab
+    
+    # --- CORREÇÃO NO CÁLCULO DE EMPREGOS ---
+    df_resultados['coef_emprego'] = df_resultados['setor'].map(coef_emprego_por_setor)
+    df_resultados['impacto_empregos'] = df_resultados['impacto_producao'] * df_resultados['coef_emprego']
+    
+    df_resultados['impacto_empresas'] = df_resultados['impacto_producao'] * 0.01
 
-    # 3. Distribuir impactos entre regiões por setor
-    resultados = []
-    for i, setor in enumerate(setores):
-        impacto_setor_nacional = impactos_setoriais[i]
+    # --- PARTE 4: CLASSIFICAÇÃO MULTIVARIADA PARA O MAPA ---
+    impacto_agregado = df_resultados.groupby('regiao').agg(
+        impacto_producao=('impacto_producao', 'sum'),
+        impacto_vab=('impacto_vab', 'sum'),
+        impacto_empregos=('impacto_empregos', 'sum'),
+        impacto_impostos=('impacto_impostos', 'sum')
+    )
+    
+    all_bins = {
+        'impacto_producao': calculate_log_bins(impacto_agregado['impacto_producao']),
+        'impacto_vab': calculate_log_bins(impacto_agregado['impacto_vab']),
+        'impacto_empregos': calculate_log_bins(impacto_agregado['impacto_empregos']),
+        'impacto_impostos': calculate_log_bins(impacto_agregado['impacto_impostos'])
+    }
+    
+    for metrica, bins in all_bins.items():
+        labels = [i for i in range(len(bins) - 1)]
+        classes = pd.cut(impacto_agregado[metrica], bins=bins, labels=labels, include_lowest=True, duplicates='drop')
+        df_resultados[f'classe_{metrica}'] = df_resultados['regiao'].map(classes)
+        df_resultados[f'classe_{metrica}'].fillna(0, inplace=True)
 
-        # Filtrar dados do setor
-        dados_setor = df_economia[df_economia['setor'] == setor].copy()
-
-        # Distribuir o impacto nacional entre as regiões
-        dados_setor['impacto_producao'] = dados_setor['share_nacional'] * impacto_setor_nacional
-        dados_setor['impacto_empregos'] = dados_setor['impacto_producao'] * 0.02  # Aproximação empregos
-        dados_setor['impacto_empresas'] = dados_setor['impacto_producao'] * 0.01  # Aproximação empresas
-
-        resultados.append(dados_setor)
-
-    df_resultados = pd.concat(resultados, ignore_index=True)
-
-    return df_resultados, impactos_setoriais
+    return df_resultados, impactos_setoriais_nacionais, all_bins
 
 # ==============================================================================
 # COMPONENTES DE INTERFACE ELEGANTES
@@ -247,7 +380,7 @@ def criar_cabecalho_elegante():
             margin: 0;
             line-height: 1.4;
         ">
-            Simulação de impactos econômicos nas 133 regiões do Brasil • Modelo Input-Output de Leontief
+            Simulação de impactos econômicos nas 133 regiões imediatas do Brasil • Modelo Input-Output de Leontief
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -271,7 +404,7 @@ def criar_controles_simulacao_sidebar(df_economia):
             <div style="text-align: left; max-width: 280px; margin: 0 auto;">
                 <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
                     <span style="background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">1</span>
-                    <span style="color: #374151; font-size: 0.875rem;">Clique em uma região no mapa</span>
+                    <span style="color: #374151; font-size: 0.875rem;">Clique em uma região imediata no mapa</span>
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
                     <span style="background: #10b981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">2</span>
@@ -302,7 +435,7 @@ def criar_controles_simulacao_sidebar(df_economia):
             <h4 style="color: #1e293b; margin: 0 0 0.5rem 0; font-size: 0.9rem;">💡 Sobre o modelo</h4>
             <p style="color: #64748b; margin: 0; font-size: 0.8rem; line-height: 1.4;">
                 Utilizamos o modelo Input-Output de Leontief para calcular os <strong>impactos econômicos diretos, indiretos e induzidos</strong>
-                do seu investimento em todas as 133 regiões intermediárias do Brasil.
+                do seu investimento em todas as 133 regiões imediatas do Brasil.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -534,7 +667,7 @@ def gerenciar_simulacoes(df_economia):
         st.markdown("---")
         criar_funcionalidades_avancadas(df_economia)
 
-def criar_sidebar_controles(df_economia):
+def criar_sidebar_controles(df_economia, gdf):
     """Sidebar com controles e lógica de colapso/expansão"""
 
     # Lógica para mostrar/esconder o conteúdo
@@ -547,26 +680,26 @@ def criar_sidebar_controles(df_economia):
         # Header compacto
         st.markdown("""
         <div style="text-align: center; margin-bottom: 1rem;">
-            <h4 style="color: #1e293b; margin: 0;">🎯 Simulação Econômica</h4>
-            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">Configure e execute</p>
+            <h4 style="color: #1e293b; margin: 0;">🎯 Simulação de Impactos Econômicos</h4>
+            <p style="color: #64748b; font-size: 0.8rem; margin: 0;">Analise os efeitos de investimentos na economia brasileira</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # Instruções step-by-step
-        st.markdown("""
-        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border-left: 3px solid #3b82f6;">
-            <p style="font-size: 0.8rem; margin: 0; font-weight: 600; color: #1e293b;">Como simular:</p>
-            <div style="font-size: 0.7rem; color: #475569; margin-top: 0.5rem;">
-                1️⃣ Escolha o setor<br>
-                2️⃣ Defina o valor<br>
-                3️⃣ Clique no mapa<br>
-                4️⃣ Execute simulação
+        # Instruções step-by-step compactas
+        with st.container():
+            st.markdown("""
+            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: #0c4a6e; margin-bottom: 0.4rem;">📋 Como simular:</div>
+                <div style="font-size: 0.7rem; color: #475569; line-height: 1.2;">
+                    <strong>1️⃣</strong> Escolha o setor • <strong>2️⃣</strong> Clique no mapa<br>
+                    <strong>3️⃣</strong> Ajuste o valor • <strong>4️⃣</strong> Execute simulação
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         # Seleção de setor via RADIO BUTTONS (sem dropdown!)
-        st.markdown("**🏭 Setor de Investimento**")
+        st.markdown("**🏭 Setor Econômico do Investimento**")
+        st.markdown('<p style="font-size: 0.8rem; color: #6b7280; margin-top: -0.5rem;">Onde o investimento será aplicado:</p>', unsafe_allow_html=True)
 
         # Preparar opções para radio buttons
         setores = list(metadados_setores.keys())
@@ -583,14 +716,15 @@ def criar_sidebar_controles(df_economia):
         setor_selecionado = setores[setor_selecionado_idx]
 
         # CORREÇÃO: Valor do investimento com CONTROLE POR PORCENTAGEM
-        st.markdown("**💰 Valor do Investimento**")
+        st.markdown("**💰 Tamanho do Investimento**")
+        st.markdown('<p style="font-size: 0.8rem; color: #6b7280; margin-top: -0.5rem;">Defina o percentual do VAB setorial da região:</p>', unsafe_allow_html=True)
         
         # Desabilitar o controle se nenhuma região for selecionada
         is_disabled = st.session_state.regiao_ativa is None
 
         # O slider agora controla a PORCENTAGEM
         percentual_choque = st.slider(
-            "% do VAB setorial na região:",
+            "Percentual do VAB setorial regional:",
             min_value=0.1,
             max_value=50.0,
             value=10.0,
@@ -598,7 +732,7 @@ def criar_sidebar_controles(df_economia):
             format="%.1f%%",
             key='slider_percentual_investimento',
             disabled=is_disabled,
-            help="Selecione o percentual do VAB do setor na região selecionada para simular como investimento."
+            help="Exemplo: 10% significa um investimento equivalente a 10% do VAB do setor na região selecionada. Valores típicos: 5-15% para investimentos grandes."
         )
 
         # Calcular o valor absoluto e exibi-lo
@@ -625,35 +759,17 @@ def criar_sidebar_controles(df_economia):
                 st.warning("Dados do setor não encontrados para esta região.")
         else:
             valor_investimento = 0
-            st.info("Selecione uma região no mapa para definir o valor do investimento.")
-
-        st.markdown("---")
-
-        # Cenários predefinidos como CARDS CLICÁVEIS (sem dropdown!)
-        st.markdown("**🎯 Cenários Predefinidos**")
-
-        cenarios = {
-            "Energia": {"emoji": "⚡", "setor": "Eletricidade, gás, água e esgoto", "valor": 5000, "regiao": "Recife"},
-            "Agro": {"emoji": "🌾", "setor": "Agropecuária", "valor": 3000, "regiao": "Campo Grande"},
-            "Tech": {"emoji": "💻", "setor": "Serviços", "valor": 8000, "regiao": "São Paulo"},
-            "Infra": {"emoji": "🏗️", "setor": "Construção", "valor": 4000, "regiao": "Manaus"}
-        }
-
-        # Cards clicáveis em grid 2x2
-        col1, col2 = st.columns(2)
-        for i, (nome, cenario) in enumerate(cenarios.items()):
-            col = col1 if i % 2 == 0 else col2
-            with col:
-                if st.button(
-                    f"{cenario['emoji']}\n{nome}",
-                    key=f"cenario_{nome}",
-                    use_container_width=True,
-                    help=f"{cenario['setor']} em {cenario['regiao']}"
-                ):
-                    # Aplicar cenário
-                    st.session_state.regiao_ativa = cenario['regiao']
-                    aplicar_cenario_automatico(cenario, df_economia)
-                    st.rerun()
+            st.markdown("""
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
+                <div style="color: #92400e; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+                    🗺️ Aguardando seleção da região
+                </div>
+                <div style="color: #a16207; font-size: 0.75rem;">
+                    Clique em uma região imediata no mapa ao lado para definir onde será feito o investimento.
+                    O valor será calculado automaticamente com base no percentual escolhido.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -661,39 +777,58 @@ def criar_sidebar_controles(df_economia):
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("🚀 **SIMULAR**",
+            if st.button("🚀 **EXECUTAR SIMULAÇÃO**",
                         type="primary",
                         use_container_width=True,
-                        disabled=st.session_state.regiao_ativa is None):
+                        disabled=st.session_state.regiao_ativa is None,
+                        help="Calcular os impactos econômicos do investimento"):
                 if st.session_state.regiao_ativa:
-                    executar_simulacao_nova(st.session_state.regiao_ativa, setor_selecionado, valor_investimento, df_economia)
+                    executar_simulacao_nova(st.session_state.regiao_ativa, setor_selecionado, valor_investimento, df_economia, gdf)
                     st.rerun()
 
         with col2:
-            if st.button("➕ **NOVA**",
+            if st.button("🔄 **NOVA SIMULAÇÃO**",
                         type="secondary",
-                        use_container_width=True):
+                        use_container_width=True,
+                        help="Limpar seleções e começar nova análise"):
                 # Reset para nova simulação
                 st.session_state.regiao_ativa = None
                 st.rerun()
 
+        # Explicação do modelo
+        with st.expander("💡 Como o impacto é calculado?"):
+            st.markdown("""
+            <small>
+            O modelo combina a **Matriz de Leontief** com um **Modelo Gravitacional**:
+            - **Impacto Direto:** O investimento afeta 100% a **região imediata de origem**.
+            - **Efeito Cascata:** Impactos indiretos (cadeia de suprimentos) e induzidos (consumo) são distribuídos para outras regiões imediatas com base no **tamanho econômico** e na **proximidade geográfica**.
+            </small>
+            """, unsafe_allow_html=True)
+
         # Seção de status atual
         if st.session_state.regiao_ativa:
             st.markdown(f"""
-            <div style="background: #ecfdf5; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
-                <small style="color: #059669; font-weight: 600;">
-                    📍 Região: {st.session_state.regiao_ativa}<br>
-                    🏭 Setor: {setor_selecionado[:15]}...<br>
-                    💰 Valor: R$ {valor_investimento:,.0f}M
-                </small>
+            <div style="background: #ecfdf5; border: 1px solid #86efac; padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem;">
+                <div style="color: #059669; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">
+                    ✅ Simulação Configurada
+                </div>
+                <div style="color: #047857; font-size: 0.75rem; line-height: 1.3;">
+                    📍 <strong>Região Imediata:</strong> {st.session_state.regiao_ativa}<br>
+                    🏭 <strong>Setor:</strong> {setor_selecionado}<br>
+                    📊 <strong>Percentual:</strong> {percentual_choque:.1f}% do VAB setorial<br>
+                    💰 <strong>Valor:</strong> R$ {valor_investimento:,.2f} milhões
+                </div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
-            <div style="background: #fef3c7; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem;">
-                <small style="color: #d97706;">
-                    👆 Clique em uma região no mapa
-                </small>
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem;">
+                <div style="color: #92400e; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+                    ⏳ Aguardando Configuração
+                </div>
+                <div style="color: #a16207; font-size: 0.75rem;">
+                    Clique em uma região imediata no mapa para começar a simulação
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -723,6 +858,90 @@ def criar_sidebar_controles(df_economia):
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+def criar_painel_resultados_aprimorado(simulacao):
+    """Cria um painel de resultados com dashboard interativo e gráficos."""
+    
+    st.markdown("### 📈 Análise de Impactos da Simulação")
+    
+    resultados_df = simulacao['resultados']
+    params = simulacao['parametros']
+    
+    # Card de Resumo da Simulação (mantido, é ótimo)
+    st.markdown(f"""
+    <div style="background-color: #f0f2f6; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border-left: 5px solid #3b82f6;">
+        <small>Simulação para:</small><br>
+        <strong>{params['regiao_origem']}</strong><br>
+        <small>Investimento de <strong>R$ {params['valor_investimento']:,.2f} Mi</strong> no setor de <strong>{params['setor_investimento']}</strong>.</small>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Métricas Principais (mantidas)
+    total_impacto_prod = resultados_df['impacto_producao'].sum()
+    total_impacto_vab = resultados_df['impacto_vab'].sum()
+    total_empregos = resultados_df['impacto_empregos'].sum()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("💰 Impacto Total na Produção", f"R$ {total_impacto_prod:,.1f} Mi")
+        st.metric("👥 Total de Empregos Gerados", f"{int(total_empregos):,}")
+    with col2:
+        st.metric("📈 Impacto no VAB (PIB)", f"R$ {total_impacto_vab:,.1f} Mi")
+        st.metric("📊 Multiplicador de Produção", f"{total_impacto_prod / params['valor_investimento']:.2f}x")
+
+    st.markdown("---")
+
+    # --- NOVO DASHBOARD COM ABAS ---
+    st.markdown("#### 📊 Análise Detalhada dos Impactos")
+    tab_ranking, tab_setorial = st.tabs(["🏆 Ranking Regional", "🏭 Composição Setorial"])
+
+    with tab_ranking:
+        st.markdown("**Top 15 Regiões Imediatas Mais Impactadas (por Produção)**")
+        
+        impacto_por_regiao = resultados_df.groupby('regiao').agg(
+            impacto_producao=('impacto_producao', 'sum'),
+            impacto_vab=('impacto_vab', 'sum'),
+            impacto_empregos=('impacto_empregos', 'sum')
+        ).nlargest(15, 'impacto_producao').reset_index()
+
+        fig_ranking = px.bar(
+            impacto_por_regiao,
+            x='impacto_producao',
+            y='regiao',
+            orientation='h',
+            title="",
+            labels={'impacto_producao': 'Impacto na Produção (R$ Milhões)', 'regiao': ''},
+            hover_data={'regiao': False, 'impacto_vab': ':.2f', 'impacto_empregos': ':.0f'},
+            height=500
+        )
+        fig_ranking.update_layout(
+            yaxis={'categoryorder':'total ascending'},
+            hoverlabel=dict(bgcolor="white", font_size=12)
+        )
+        st.plotly_chart(fig_ranking, use_container_width=True)
+
+    with tab_setorial:
+        st.markdown("**Composição do Impacto Total por Setor Econômico**")
+        
+        impacto_por_setor = resultados_df.groupby('setor').agg(
+            impacto_producao=('impacto_producao', 'sum'),
+            impacto_vab=('impacto_vab', 'sum'),
+            impacto_empregos=('impacto_empregos', 'sum')
+        ).reset_index()
+
+        fig_treemap = px.treemap(
+            impacto_por_setor,
+            path=[px.Constant("Impacto Total"), 'setor'],
+            values='impacto_producao',
+            color='setor',
+            color_discrete_map={
+                'Agropecuária': '#FF6B6B', 'Indústria': '#4ECDC4',
+                'Construção': '#45B7D1', 'Serviços': '#96CEB4'
+            },
+            hover_data={'impacto_vab': ':.2f', 'impacto_empregos': ':.0f'}
+        )
+        fig_treemap.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+        st.plotly_chart(fig_treemap, use_container_width=True)
 
 def criar_painel_resultados():
     """Nova coluna de resultados compacta e organizada"""
@@ -755,16 +974,20 @@ def criar_painel_resultados():
     if st.session_state.resultados_simulacao is not None:
         total_impacto = st.session_state.resultados_simulacao['impacto_producao'].sum()
         total_empregos = st.session_state.resultados_simulacao['impacto_empregos'].sum()
+        total_vab = st.session_state.resultados_simulacao['impacto_vab'].sum()
+        total_impostos = st.session_state.resultados_simulacao['impacto_impostos'].sum()
 
-        # Métricas principais compactas
+        # Métricas principais expandidas
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Impacto Total", f"R$ {total_impacto:,.0f}M", delta=None)
+            st.metric("💰 Produção", f"R$ {total_impacto:,.0f}M", delta=None)
+            st.metric("🏛️ Impostos", f"R$ {total_impostos:,.0f}M", delta=None)
         with col2:
-            st.metric("Empregos", f"{total_empregos:,.0f}", delta=None)
+            st.metric("📊 PIB (VAB)", f"R$ {total_vab:,.0f}M", delta=None)
+            st.metric("👥 Empregos", f"{total_empregos:,.0f}", delta=None)
 
         # Top 3 regiões impactadas
-        st.markdown("**🏆 Top 3 Regiões**")
+        st.markdown("**🏆 Top 3 Regiões Imediatas**")
         top_regioes = st.session_state.resultados_simulacao.groupby('regiao')['impacto_producao'].sum().nlargest(3)
 
         for i, (regiao, impacto) in enumerate(top_regioes.items(), 1):
@@ -800,29 +1023,15 @@ def criar_painel_resultados():
                     # Expandir seção de detalhes
                     pass
 
-def aplicar_cenario_automatico(cenario, df_economia):
-    """Aplica um cenário predefinido automaticamente"""
-    # Encontrar setor correspondente
-    setores_disponiveis = list(metadados_setores.keys())
-    setor_encontrado = None
 
-    for setor in setores_disponiveis:
-        if cenario['setor'].lower() in setor.lower() or setor.lower() in cenario['setor'].lower():
-            setor_encontrado = setor
-            break
-
-    if not setor_encontrado:
-        setor_encontrado = setores_disponiveis[0]
-
-    # Executar simulação automaticamente
-    executar_simulacao_nova(cenario['regiao'], setor_encontrado, cenario['valor'], df_economia)
-
-def executar_simulacao_nova(regiao, setor, valor, df_economia):
+def executar_simulacao_nova(regiao, setor, valor, df_economia, gdf):
     """Executa uma nova simulação e adiciona à lista"""
-    resultados, _ = executar_simulacao_avancada(
+    resultados, _, all_bins = executar_simulacao_avancada(
         df_economia=df_economia,
+        gdf=gdf,
         valor_choque=valor,
-        setor_choque=setor
+        setor_choque=setor,
+        regiao_origem=regiao
     )
 
     if resultados is not None:
@@ -839,6 +1048,7 @@ def executar_simulacao_nova(regiao, setor, valor, df_economia):
             'valor': valor,
             'timestamp': datetime.now(),
             'resultados': resultados,
+            'all_bins': all_bins,  # Armazenar todos os bins para diferentes métricas
             'parametros': {  # Adicionando a chave que faltava
                 'regiao_origem': regiao,
                 'setor_investimento': setor,
@@ -962,71 +1172,20 @@ def criar_funcionalidades_avancadas(df_economia):
                 )
 
     with col2:
-        st.markdown("#### 🎯 Cenários Predefinidos")
-
-        cenarios = {
-            "Energia Renovável - Nordeste": {
-                "regiao": "Recife",
-                "setor": "Eletricidade, gás, água e esgoto",
-                "valor": 5000.0,
-                "descricao": "Investimento em energia renovável no Nordeste"
-            },
-            "Agronegócio - Centro-Oeste": {
-                "regiao": "Campo Grande",
-                "setor": "Agropecuária",
-                "valor": 3000.0,
-                "descricao": "Expansão do agronegócio no Centro-Oeste"
-            },
-            "Tecnologia - São Paulo": {
-                "regiao": "São Paulo",
-                "setor": "Serviços",
-                "valor": 8000.0,
-                "descricao": "Hub tecnológico em São Paulo"
-            },
-            "Infraestrutura - Norte": {
-                "regiao": "Manaus",
-                "setor": "Construção",
-                "valor": 4000.0,
-                "descricao": "Desenvolvimento de infraestrutura na Amazônia"
-            }
-        }
-
-        cenario_selecionado = st.selectbox(
-            "Escolha um cenário:",
-            list(cenarios.keys()),
-            help="Cenários predefinidos para análise rápida"
-        )
-
-        if st.button("🚀 Aplicar Cenário", use_container_width=True):
-            cenario = cenarios[cenario_selecionado]
-
-            # Configurar parâmetros do cenário
-            st.session_state.regiao_ativa = cenario["regiao"]
-
-            # Simular o cenário
-            simular_cenario_predefinido(cenario, df_economia)
-            st.success(f"✅ Cenário '{cenario_selecionado}' aplicado com sucesso!")
-            st.rerun()
-
-        # Mostrar detalhes do cenário selecionado
-        if cenario_selecionado:
-            cenario = cenarios[cenario_selecionado]
+        st.markdown("#### 📊 Informações da Simulação")
+        
+        if st.session_state.resultados_simulacao is not None:
+            # Mostrar informações da última simulação
+            params = st.session_state.parametros_simulacao
             st.markdown(f"""
-            <div style="
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                padding: 0.75rem;
-                border-radius: 6px;
-                margin-top: 0.5rem;
-            ">
-                <div style="font-size: 0.8rem; font-weight: bold; color: #374151; margin-bottom: 0.25rem;">
-                    {cenario['descricao']}
-                </div>
-                <div style="font-size: 0.7rem; color: #6b7280;">
-                    📍 {cenario['regiao']} • 🏭 {cenario['setor']} • 💰 R$ {cenario['valor']:,.1f}M
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            **🎯 Última Simulação:**
+            - **Região:** {params['regiao']}
+            - **Setor:** {params['setor']}
+            - **Investimento:** R$ {params['valor']:,.0f}M
+            - **Multiplicador:** {params.get('multiplicador', 'N/A')}
+            """)
+        else:
+            st.info("Nenhuma simulação executada ainda.")
 
 def gerar_relatorio_completo():
     """Gera relatório completo de todas as simulações para export"""
@@ -1040,7 +1199,9 @@ def gerar_relatorio_completo():
         # Agregar por região
         impactos_por_regiao = resultados.groupby('regiao').agg({
             'impacto_producao': 'sum',
-            'impacto_empregos': 'sum'
+            'impacto_empregos': 'sum',
+            'impacto_vab': 'sum',
+            'impacto_impostos': 'sum'
         }).reset_index()
 
         for _, row in impactos_por_regiao.iterrows():
@@ -1053,6 +1214,8 @@ def gerar_relatorio_completo():
                 'timestamp': sim['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
                 'regiao_impactada': row['regiao'],
                 'impacto_producao': row['impacto_producao'],
+                'impacto_vab': row['impacto_vab'],
+                'impacto_impostos': row['impacto_impostos'],
                 'impacto_empregos': row['impacto_empregos'],
                 'multiplicador_efetivo': total_impacto / sim['valor'],
                 'participacao_impacto': (row['impacto_producao'] / total_impacto) * 100
@@ -1069,16 +1232,22 @@ def gerar_comparacao_export():
     for sim in simulacoes_ativas:
         total_impacto = sim['resultados']['impacto_producao'].sum()
         total_empregos = sim['resultados']['impacto_empregos'].sum()
+        total_vab = sim['resultados']['impacto_vab'].sum()
+        total_impostos = sim['resultados']['impacto_impostos'].sum()
 
         comparacao_data.append({
             'simulacao_nome': sim['nome'],
             'regiao_origem': sim['regiao'],
             'setor': sim['setor'],
             'investimento_milhoes': sim['valor'],
-            'impacto_total_milhoes': total_impacto,
+            'impacto_producao_milhoes': total_impacto,
+            'impacto_vab_milhoes': total_vab,
+            'impacto_impostos_milhoes': total_impostos,
             'empregos_gerados': total_empregos,
-            'multiplicador_efetivo': total_impacto / sim['valor'],
+            'multiplicador_producao': total_impacto / sim['valor'],
+            'multiplicador_vab': total_vab / sim['valor'],
             'eficiencia_empregos': total_empregos / sim['valor'],
+            'carga_tributaria_efetiva': (total_impostos / total_vab) * 100 if total_vab > 0 else 0,
             'timestamp': sim['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
             'cor_visualizacao': sim['cor']
         })
@@ -1086,72 +1255,6 @@ def gerar_comparacao_export():
     df_comparacao = pd.DataFrame(comparacao_data)
     return df_comparacao.to_csv(index=False)
 
-def simular_cenario_predefinido(cenario, df_economia):
-    """Executa simulação com parâmetros predefinidos do cenário"""
-    # Buscar dados da região do cenário
-    dados_regiao = df_economia[df_economia['regiao'] == cenario['regiao']].copy()
-
-    if dados_regiao.empty:
-        st.error(f"Região '{cenario['regiao']}' não encontrada nos dados.")
-        return
-
-    # Encontrar setor mais próximo
-    setores_disponiveis = dados_regiao['setor'].unique()
-    setor_encontrado = None
-
-    for setor in setores_disponiveis:
-        if cenario['setor'].lower() in setor.lower() or setor.lower() in cenario['setor'].lower():
-            setor_encontrado = setor
-            break
-
-    if not setor_encontrado:
-        # Usar primeiro setor disponível como fallback
-        setor_encontrado = setores_disponiveis[0]
-
-    # Executar simulação
-    resultados, _ = executar_simulacao_avancada(
-        df_economia=df_economia,
-        valor_choque=cenario['valor'],
-        setor_choque=setor_encontrado
-    )
-
-    if resultados is not None:
-        # Gerar cor única para o cenário
-        cores_disponiveis = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F']
-        cor_simulacao = cores_disponiveis[len(st.session_state.simulacoes) % len(cores_disponiveis)]
-
-        # Adicionar à lista de simulações
-        nova_simulacao = {
-            'id': f'cenario_{st.session_state.contador_simulacoes:03d}',
-            'nome': f'Cenário {st.session_state.contador_simulacoes}: {setor_encontrado} em {cenario["regiao"]}',
-            'regiao': cenario['regiao'],
-            'setor': setor_encontrado,
-            'valor': cenario['valor'],
-            'timestamp': datetime.now(),
-            'resultados': resultados,
-            'parametros': {  # Adicionando a chave que faltava
-                'regiao_origem': cenario['regiao'],
-                'setor_investimento': setor_encontrado,
-                'valor_investimento': cenario['valor'],
-                'timestamp': datetime.now()
-            },
-            'cor': cor_simulacao,
-            'ativa': True
-        }
-
-        st.session_state.simulacoes.append(nova_simulacao)
-        st.session_state.contador_simulacoes += 1
-
-        # Atualizar resultados atuais
-        st.session_state.resultados_simulacao = resultados
-        st.session_state.parametros_simulacao = {
-            'regiao_origem': cenario['regiao'],
-            'setor_investimento': setor_encontrado,
-            'valor_investimento': cenario['valor'],
-            'percentual_vab': (cenario['valor'] / dados_regiao[dados_regiao['setor'] == setor_encontrado]['vab'].sum()) * 100,
-            'multiplicador_usado': resultados['impacto_producao'].sum() / cenario['valor'],
-            'timestamp': datetime.now()
-        }
 
 def criar_dashboard_comparacao_simulacoes(simulacoes_ativas):
     """Cria dashboard de comparação entre múltiplas simulações ativas"""
@@ -1409,11 +1512,27 @@ def criar_secao_validacao_modelo():
                 st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
 
         st.markdown("---")
+        st.markdown("### 💰 Coeficientes Econômicos")
+        
+        col_vab, col_impostos = st.columns(2)
+        
+        with col_vab:
+            st.markdown("**Coeficientes de VAB por Setor:**")
+            for setor, coef in coef_vab_por_setor.items():
+                emoji = metadados_setores[setor]['emoji']
+                st.markdown(f"{emoji} **{setor[:12]}:** {coef:.1%}")
+        
+        with col_impostos:
+            st.markdown("**Tributação:**")
+            st.markdown(f"🏛️ **Carga Tributária:** {coef_impostos_sobre_vab:.1%}")
+            st.markdown("📊 **Aplicação:** Sobre VAB gerado")
+        
+        st.markdown("---")
         st.markdown("### 🌍 Cobertura Espacial")
         st.markdown("""
-        - **Nível Geográfico:** Regiões Intermediárias (Divisão Regional do Brasil - IBGE, 2017)
+        - **Nível Geográfico:** Regiões Imediatas (Divisão Regional do Brasil - IBGE, 2017)
         - **Abrangência:** Todo território nacional brasileiro
-        - **Resolução:** 133 regiões intermediárias em 26 estados + DF
+        - **Resolução:** 133 regiões imediatas em 26 estados + DF
         """)
 
     with tab3:
@@ -1469,8 +1588,8 @@ def criar_secao_validacao_modelo():
         #### Processo de Cálculo
         1. **Choque inicial** aplicado no setor selecionado
         2. **Propagação** através da matriz de impactos
-        3. **Distribuição espacial** baseada nos shares regionais
-        4. **Agregação** dos resultados por região e setor
+        3. **Distribuição espacial** baseada nos shares regionais das 133 regiões imediatas
+        4. **Agregação** dos resultados por região imediata e setor
         """)
 
 def criar_ranking_resultados_elegante(resultados_simulacao):
@@ -1492,7 +1611,7 @@ def criar_ranking_resultados_elegante(resultados_simulacao):
         x='impacto_producao',
         y='regiao',
         orientation='h',
-        title="Top 10 Regiões por Impacto Total na Produção",
+        title="Top 10 Regiões Imediatas por Impacto Total na Produção",
         labels={'impacto_producao': 'Impacto (R$ Mi)', 'regiao': ''},
         color='impacto_producao',
         color_continuous_scale='Reds'
@@ -1507,7 +1626,7 @@ def criar_ranking_resultados_elegante(resultados_simulacao):
     st.plotly_chart(fig_ranking, use_container_width=True)
 
     # Detalhamento setorial para cada região do top 5
-    st.markdown("### 📊 Composição Setorial - Top 5 Regiões")
+    st.markdown("### 📊 Composição Setorial - Top 5 Regiões Imediatas")
 
     top_5 = top_10.head(5)
 
@@ -1598,177 +1717,177 @@ def main():
         criar_secao_validacao_modelo()
 
 def simulacao_principal_tab(gdf, df_economia):
-    """Aba principal com simulação e mapa - Arquitetura dinâmica com sidebar colapsável"""
+    """Aba principal com simulação, mapa multi-camadas e detecção de clique corrigida."""
 
     # Layout dinâmico baseado no estado da sidebar
-    if st.session_state.sidebar_state == 'expanded':
-        # Layout normal: Sidebar (20%) + Mapa (48%) + Resultados (32%)
-        col_sidebar, col_mapa, col_resultados = st.columns([0.2, 0.48, 0.32])
+    if st.session_state.get('sidebar_state', 'expanded') == 'expanded':
+        col_sidebar, col_mapa, col_resultados = st.columns([0.25, 0.45, 0.3])
     else:
-        # Layout colapsado: Botão (5%) + Mapa (60%) + Resultados (35%)
         col_sidebar, col_mapa, col_resultados = st.columns([0.05, 0.6, 0.35])
 
     # ==============================================================================
     # SIDEBAR ESQUERDA: CONTROLES E INSTRUÇÕES
     # ==============================================================================
     with col_sidebar:
-        criar_sidebar_controles(df_economia)
+        criar_sidebar_controles(df_economia, gdf)
 
     # ==============================================================================
-    # COLUNA CENTRAL: MAPA INTERATIVO (COM TRATAMENTO ROBUSTO DE ERROS)
+    # COLUNA CENTRAL: MAPA INTERATIVO (COM DETECÇÃO DE CLIQUE CORRIGIDA)
     # ==============================================================================
     with col_mapa:
         try:
-            st.markdown("### 🗺️ Mapa Interativo do Brasil")
-
-            # Criar mapa base
-            mapa = folium.Map(
-                location=[-15.0, -55.0],
-                zoom_start=4,
-                tiles="CartoDB positron",
-                prefer_canvas=True
+            st.markdown("### 🗺️ Análise Geográfica Interativa")
+            
+            # Seletor de Camada
+            layer_choice = st.radio(
+                "Selecione a camada para visualizar no mapa:",
+                ['Produção', 'VAB (PIB)', 'Empregos', 'Impostos'],
+                horizontal=True, 
+                key="map_layer_selector"
             )
 
-            # Camadas de múltiplas simulações com validação robusta
-            simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
+            column_map = {
+                'Produção': 'impacto_producao', 
+                'VAB (PIB)': 'impacto_vab',
+                'Empregos': 'impacto_empregos', 
+                'Impostos': 'impacto_impostos'
+            }
+            selected_column = column_map[layer_choice]
+            selected_class_col = f"classe_{selected_column}"
+            
+            mapa = folium.Map(location=[-15.0, -55.0], zoom_start=4, tiles="CartoDB positron")
 
-            if len(simulacoes_ativas) > 0:
-                for i, simulacao in enumerate(simulacoes_ativas):
-                    try:
-                        # Validação de dados da simulação
-                        resultados_df = simulacao['resultados']
-                        if not isinstance(resultados_df, pd.DataFrame):
-                            continue
-                        
-                        if 'regiao' not in resultados_df.columns or 'impacto_producao' not in resultados_df.columns:
-                            continue
+            # --- LÓGICA DE VISUALIZAÇÃO CORRIGIDA COM 4 CAMADAS ---
 
-                        # Agregar resultados por região
-                        resultados_agregados = resultados_df.groupby('regiao')['impacto_producao'].sum().reset_index()
-
-                        # Garantir que as colunas de junção são do mesmo tipo e limpas
-                        gdf_temp = gdf.copy()
-                        gdf_temp['NM_RGINT_JOIN'] = gdf_temp['NM_RGINT'].astype(str).str.strip()
-                        resultados_agregados['regiao_JOIN'] = resultados_agregados['regiao'].astype(str).str.strip()
-
-                        # Merge com validação
-                        gdf_com_dados = gdf_temp.merge(
-                            resultados_agregados,
-                            left_on='NM_RGINT_JOIN',
-                            right_on='regiao_JOIN',
-                            how='left'
-                        ).fillna(0)
-
-                        # Garantir que a coluna de dados é numérica
-                        gdf_com_dados['impacto_producao'] = pd.to_numeric(
-                            gdf_com_dados['impacto_producao'], errors='coerce'
-                        ).fillna(0)
-
-                        # Só criar choropleth se há dados válidos
-                        if not gdf_com_dados.empty and gdf_com_dados['impacto_producao'].sum() > 0:
-                            folium.Choropleth(
-                                geo_data=gdf_com_dados,
-                                data=gdf_com_dados,
-                                columns=['NM_RGINT', 'impacto_producao'],
-                                key_on='feature.properties.NM_RGINT',
-                                fill_color='YlOrRd',  # Usando gradiente mais seguro
-                                fill_opacity=max(0.3, 0.7 - (i * 0.1)),  # Garantir opacidade mínima
-                                line_opacity=0.4,
-                                legend_name=f"Sim {i+1}: Impacto (R$ Mi)",
-                                name=f'layer_{simulacao["id"]}'
-                            ).add_to(mapa)
-
-                    except Exception as e:
-                        # Log do erro específico desta simulação, mas continua com as outras
-                        print(f"Erro ao renderizar simulação {simulacao.get('id', 'desconhecida')}: {e}")
-                        continue
-
-                # Adicionar controle de layers se houver múltiplas simulações
-                if len(simulacoes_ativas) > 1:
-                    folium.LayerControl(collapsed=False).add_to(mapa)
-
-            # Camada de interação (sempre presente)
+            # Camada 1: Bordas de Fundo (VISUAL)
+            # Desenha as bordas cinzas de todas as regiões para contexto
             folium.GeoJson(
                 gdf,
-                style_function=lambda feature: {
-                    'fillColor': '#FFD700' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'transparent',
-                    'color': '#FF4500' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else '#333333',
-                    'weight': 4 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 1,
-                    'fillOpacity': 0.7 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 0,
-                    'opacity': 1
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['NM_RGINT'],
-                    aliases=['Região:'],
-                    localize=True,
-                    sticky=True,
-                    labels=True,
-                    style="background-color: white; border: 2px solid black; border-radius: 3px; box-shadow: 3px;"
-                )
+                name='Bordas das Regiões',
+                style_function=lambda x: {
+                    'fillColor': 'transparent',  # Sem preenchimento
+                    'color': '#888888',          # Cor cinza para as bordas
+                    'weight': 1,                 # Espessura fina
+                    'fillOpacity': 0,
+                }
             ).add_to(mapa)
 
-            # Renderizar mapa
+            simulacoes_ativas = [sim for sim in st.session_state.simulacoes if sim['ativa']]
+
+            # Camada 2: Mapa de Calor (VISUAL)
+            if len(simulacoes_ativas) > 0:
+                simulacao = simulacoes_ativas[-1]
+                resultados_df = simulacao['resultados']
+                
+                map_data = resultados_df.groupby('regiao').agg(
+                    valor=(selected_column, 'sum'),
+                    classe=(selected_class_col, 'first')
+                ).reset_index()
+
+                gdf_com_dados = gdf.merge(map_data, left_on='NM_RGINT', right_on='regiao', how='left').fillna(0)
+
+                # Paleta de cores para 5 classes
+                cores = ['#ffffd4', '#fed98e', '#fe9929', '#d95f0e', '#993404']
+                
+                # Desenha o mapa de calor usando GeoJson
+                folium.GeoJson(
+                    gdf_com_dados,
+                    name='Mapa de Calor',
+                    style_function=lambda feature: {
+                        'fillOpacity': 0.7, 
+                        'weight': 0,  # Sem bordas no mapa de calor para não conflitar
+                        'color': 'transparent',
+                        'fillColor': cores[int(feature['properties']['classe'])] if 'classe' in feature['properties'] else 'transparent'
+                    }
+                ).add_to(mapa)
+
+                # Legenda HTML dinâmica
+                if 'all_bins' in simulacao and selected_column in simulacao['all_bins']:
+                    bins = simulacao['all_bins'][selected_column]
+                    legend_labels = []
+                    for i in range(len(bins) - 1):
+                        limite_inferior = bins[i]
+                        limite_superior = bins[i+1]
+                        if selected_column == 'impacto_empregos':
+                            label = f"{limite_inferior:,.0f} - {limite_superior:,.0f}"
+                        elif limite_inferior < 1000:
+                            label = f"{limite_inferior:,.0f} - {limite_superior:,.0f} Mi"
+                        else:
+                            label = f"{limite_inferior/1000:,.1f} Bi - {limite_superior/1000:,.1f} Bi"
+                        legend_labels.append(label)
+
+                    titulo_legenda = {
+                        'impacto_producao': 'Impacto na Produção (R$)',
+                        'impacto_vab': 'Impacto no VAB/PIB (R$)',
+                        'impacto_empregos': 'Empregos Gerados',
+                        'impacto_impostos': 'Impostos Gerados (R$)'
+                    }
+
+                    legend_html = f'''
+                     <div style="position: fixed; 
+                     bottom: 30px; left: 30px; width: 250px; 
+                     border:2px solid grey; z-index:9999; font-size:14px;
+                     background-color:rgba(255, 255, 255, 0.9);
+                     padding: 10px; border-radius: 5px;">
+                     <strong>{titulo_legenda[selected_column]}</strong><br>
+                     '''
+                    for i, label in enumerate(legend_labels):
+                        if i < len(cores):
+                            legend_html += f'<i style="background:{cores[i]}; opacity:0.7; width:20px; height:20px; float:left; margin-right:8px; border:1px solid grey;"></i> {label}<br>'
+                    
+                    legend_html += '</div>'
+                    mapa.get_root().html.add_child(folium.Element(legend_html))
+
+            # Camada 3: Destaque da Região Selecionada (VISUAL)
+            if st.session_state.regiao_ativa:
+                folium.GeoJson(
+                    gdf[gdf['NM_RGINT'] == st.session_state.regiao_ativa],
+                    name='Região Selecionada',
+                    style_function=lambda x: {
+                        'fillColor': '#3b82f6',  # Preenchimento azul
+                        'color': '#1d4ed8',      # Borda azul escura
+                        'weight': 3,             # Borda mais espessa
+                        'fillOpacity': 0.3       # Semi-transparente
+                    }
+                ).add_to(mapa)
+
+            # Camada 4: Camada de Captura de Cliques (FUNCIONAL)
+            # Fica por cima de tudo, é invisível e só serve para capturar o tooltip
+            folium.GeoJson(
+                gdf,
+                name='Camada de Interação',
+                style_function=lambda x: {'fillOpacity': 0, 'weight': 0},  # Totalmente invisível
+                tooltip=folium.GeoJsonTooltip(fields=['NM_RGINT'], aliases=['Região Imediata:'])
+            ).add_to(mapa)
+
             map_data = st_folium(
                 mapa,
                 use_container_width=True,
-                height=650,
-                returned_objects=["last_object_clicked_tooltip"]
+                height=600,
+                returned_objects=["last_object_clicked_tooltip"], # Pedimos apenas o tooltip
+                key="main_map"
             )
 
-            # Detecção de cliques com validação
+            # --- PROCESSAMENTO DO CLIQUE (LÓGICA CORRIGIDA) ---
             if map_data and map_data.get('last_object_clicked_tooltip'):
-                tooltip_data = map_data['last_object_clicked_tooltip']
-                nova_regiao = None
-
+                tooltip_text = map_data['last_object_clicked_tooltip']
+                
+                # PARSER ROBUSTO: Pega a última linha não vazia do tooltip e remove espaços
                 try:
-                    if isinstance(tooltip_data, dict):
-                        nova_regiao = tooltip_data.get('Região:')
-                    elif isinstance(tooltip_data, str):
-                        if 'Região:' in tooltip_data:
-                            nova_regiao = tooltip_data.split('Região:')[1].strip()
-                        else:
-                            nova_regiao = tooltip_data.strip()
+                    nova_regiao = [line.strip() for line in tooltip_text.split('\n') if line.strip()][-1]
+                except (IndexError, AttributeError):
+                    nova_regiao = None
 
-                    if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
-                        st.session_state.regiao_ativa = nova_regiao
-                        st.rerun()
-                except Exception as e:
-                    print(f"Erro ao processar clique no mapa: {e}")
+                # LÓGICA DE ATUALIZAÇÃO DE ESTADO
+                if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
+                    st.session_state.regiao_ativa = nova_regiao
+                    st.success(f"✅ Região selecionada: **{nova_regiao}**. Controles habilitados.")
+                    st.rerun()
 
         except Exception as e:
-            # Fallback: mostrar erro amigável e mapa básico
-            st.error(f"⚠️ Erro ao renderizar o mapa: {str(e)}")
-            st.warning("Tentando carregar mapa básico...")
-            
-            try:
-                # Mapa de emergência sem dados de simulação
-                mapa_basico = folium.Map(
-                    location=[-15.0, -55.0],
-                    zoom_start=4,
-                    tiles="CartoDB positron"
-                )
-                
-                folium.GeoJson(
-                    gdf,
-                    style_function=lambda feature: {
-                        'fillColor': 'transparent',
-                        'color': '#333333',
-                        'weight': 1,
-                        'fillOpacity': 0
-                    },
-                    tooltip=folium.GeoJsonTooltip(fields=['NM_RGINT'], aliases=['Região:'])
-                ).add_to(mapa_basico)
-                
-                st_folium(mapa_basico, use_container_width=True, height=650)
-                
-            except Exception as e2:
-                st.error(f"❌ Não foi possível carregar nem o mapa básico: {str(e2)}")
-            
-            # Imprimir erro completo no console para depuração
-            import traceback
-            traceback.print_exc()
+            st.error(f"⚠️ Ocorreu um erro ao renderizar o mapa: {e}")
 
-        # Perfil compacto da região selecionada (fora do try principal)
+        # Perfil compacto da região selecionada
         if st.session_state.regiao_ativa is not None:
             with st.expander(f"📍 {st.session_state.regiao_ativa}", expanded=True):
                 dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
@@ -1778,7 +1897,16 @@ def simulacao_principal_tab(gdf, df_economia):
     # COLUNA DIREITA: RESULTADOS DA SIMULAÇÃO
     # ==============================================================================
     with col_resultados:
-        criar_painel_resultados()
+        if st.session_state.simulacoes:
+            criar_painel_resultados_aprimorado(st.session_state.simulacoes[-1])
+        else:
+            st.markdown("""
+            <div style="text-align: center; padding: 2rem 0;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                <h4 style="color: #64748b;">Resultados aparecerão aqui</h4>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Execute uma simulação para ver os impactos.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     # ==============================================================================
     # SEÇÃO INFERIOR: ANÁLISES DETALHADAS EXPANSÍVEIS
