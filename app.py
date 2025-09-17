@@ -635,11 +635,11 @@ def main():
             )
         ).add_to(mapa)
 
-        # Renderizar mapa
+        # Renderizar mapa com altura maior para simetria visual
         map_data = st_folium(
             mapa,
             use_container_width=True,
-            height=500,
+            height=650,
             returned_objects=["last_object_clicked_tooltip"]
         )
 
