@@ -274,31 +274,57 @@ st.markdown("""
         box-shadow: 0 0 0 3px var(--primary-50);
     }
 
-    /* Fix dropdown styling - Universal compatibility */
+    /* Fix dropdown styling - Force white background always */
+    .stSelectbox div[data-baseweb="select"],
     .stSelectbox div[data-baseweb="select"] > div,
     .stSelectbox div[data-baseweb="select"] > div > div,
     .stSelectbox div[data-baseweb="select"] > div > div > div,
     .stSelectbox [data-baseweb="select"] .css-1uccc91-singleValue,
     .stSelectbox [data-baseweb="select"] .css-1wa3eu0-placeholder,
-    .stSelectbox [data-baseweb="select"] .css-1dimb5e-singleValue {
-        background-color: var(--background-color, #ffffff) !important;
-        color: var(--text-color, #1e293b) !important;
+    .stSelectbox [data-baseweb="select"] .css-1dimb5e-singleValue,
+    .stSelectbox [data-baseweb="select"] .css-1n7v3ny-option,
+    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"],
+    .stSelectbox [data-baseweb="select"] [data-baseweb="select-value"],
+    .stSelectbox [data-baseweb="select"] span {
+        background-color: white !important;
+        color: #1e293b !important;
+        background: white !important;
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 8px !important;
     }
 
-    /* Dropdown container */
+    /* Dropdown container - super specific */
     .stSelectbox div[data-baseweb="select"] {
-        background-color: var(--background-color, #ffffff) !important;
-        border: 2px solid var(--border-color, #e2e8f0) !important;
+        background-color: white !important;
+        background: white !important;
+        border: 2px solid #e2e8f0 !important;
         border-radius: 8px !important;
+    }
+
+    /* Value display area */
+    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"],
+    .stSelectbox [data-baseweb="select"] > div[data-baseweb="select-value"] > div {
+        background-color: white !important;
+        background: white !important;
+        color: #1e293b !important;
+    }
+
+    /* All possible text elements */
+    .stSelectbox [data-baseweb="select"] span,
+    .stSelectbox [data-baseweb="select"] div,
+    .stSelectbox [data-baseweb="select"] p {
+        color: #1e293b !important;
+        background-color: transparent !important;
     }
 
     /* Fix dropdown options list */
     div[role="listbox"],
     .stSelectbox div[data-baseweb="popover"] > div,
     .stSelectbox div[data-baseweb="popover"] > div > div {
-        background-color: var(--background-color, #ffffff) !important;
-        color: var(--text-color, #1e293b) !important;
-        border: 1px solid var(--border-color, #e2e8f0) !important;
+        background-color: white !important;
+        background: white !important;
+        color: #1e293b !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
         box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
     }
@@ -307,8 +333,9 @@ st.markdown("""
     div[role="option"],
     .stSelectbox li[role="option"],
     .stSelectbox div[role="option"] {
-        background-color: var(--background-color, #ffffff) !important;
-        color: var(--text-color, #1e293b) !important;
+        background-color: white !important;
+        background: white !important;
+        color: #1e293b !important;
         padding: 0.75rem 1rem !important;
     }
 
@@ -316,38 +343,29 @@ st.markdown("""
     div[role="option"]:hover,
     .stSelectbox li[role="option"]:hover,
     .stSelectbox div[role="option"]:hover {
-        background-color: var(--hover-color, #f1f5f9) !important;
-        color: var(--text-color, #1e293b) !important;
+        background-color: #f1f5f9 !important;
+        background: #f1f5f9 !important;
+        color: #1e293b !important;
     }
 
     /* Selected option */
     div[role="option"][aria-selected="true"],
     .stSelectbox li[role="option"][aria-selected="true"] {
-        background-color: var(--selected-color, #dbeafe) !important;
-        color: var(--selected-text-color, #1e40af) !important;
+        background-color: #dbeafe !important;
+        background: #dbeafe !important;
+        color: #1e40af !important;
     }
 
-    /* Responsive theme support */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --background-color: #1f2937;
-            --text-color: #f9fafb;
-            --border-color: #374151;
-            --hover-color: #374151;
-            --selected-color: #1e40af;
-            --selected-text-color: #dbeafe;
-        }
+    /* Force override for all selectbox states */
+    .stSelectbox * {
+        background-color: white !important;
+        color: #1e293b !important;
     }
 
-    @media (prefers-color-scheme: light) {
-        :root {
-            --background-color: #ffffff;
-            --text-color: #1e293b;
-            --border-color: #e2e8f0;
-            --hover-color: #f1f5f9;
-            --selected-color: #dbeafe;
-            --selected-text-color: #1e40af;
-        }
+    /* Exception for icons and hover states */
+    .stSelectbox *:hover {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
     }
 
     .stNumberInput > div > div > input {
@@ -1781,7 +1799,7 @@ def simulacao_principal_tab(gdf, df_economia):
                         data=gdf_com_dados,
                         columns=['NM_RGINT', 'impacto_producao'],
                         key_on='feature.properties.NM_RGINT',
-                        fill_color=['white', simulacao['cor']],
+                        fill_color='viridis',
                         fill_opacity=0.6 - (i * 0.1),  # Reduzir opacidade para sobreposições
                         line_opacity=0.4,
                         legend_name=f'{simulacao["nome"][:30]}... (R$ Mi)',
