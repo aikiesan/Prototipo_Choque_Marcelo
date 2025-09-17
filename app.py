@@ -796,14 +796,61 @@ def criar_sidebar_controles(df_economia, gdf):
                 st.rerun()
 
         # Explicação do modelo
-        with st.expander("💡 Como o impacto é calculado?"):
+        with st.expander("💡 Entenda como o impacto é calculado"):
             st.markdown("""
-            <small>
-            O modelo combina a **Matriz de Leontief** com um **Modelo Gravitacional**:
-            - **Impacto Direto:** O investimento afeta 100% a **região imediata de origem**.
-            - **Efeito Cascata:** Impactos indiretos (cadeia de suprimentos) e induzidos (consumo) são distribuídos para outras regiões imediatas com base no **tamanho econômico** e na **proximidade geográfica**.
-            </small>
+            <p style="font-size: 0.85rem; text-align: center; font-style: italic; color: #475569;">
+                Pense no seu investimento como uma pedra jogada em um lago.
+            </p>
             """, unsafe_allow_html=True)
+
+            # Passo 1: O Impacto Direto
+            st.markdown("""
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 2rem; margin-right: 1rem;">🎯</div>
+                <div>
+                    <strong style="color: #1e293b;">1. O Impacto Direto (Onde a 'Pedra' Cai)</strong>
+                    <p style="font-size: 0.8rem; color: #475569; margin: 0;">
+                        O valor total do seu investimento é aplicado <strong>100% na região imediata que você selecionou</strong>. Este é o efeito inicial e mais concentrado.
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Passo 2: O Efeito Cascata
+            st.markdown("""
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 2rem; margin-right: 1rem;">🌊</div>
+                <div>
+                    <strong style="color: #1e293b;">2. O Efeito Cascata (As 'Ondas' se Espalham)</strong>
+                    <p style="font-size: 0.8rem; color: #475569; margin: 0;">
+                        Os impactos indiretos (empresas comprando de fornecedores) e induzidos (pessoas gastando salários) se espalham pelo país. A força dessas 'ondas' em outras regiões depende de dois fatores:
+                    </p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Detalhes do Efeito Cascata em Colunas
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("""
+                <div style="background-color: #f0f9ff; padding: 0.75rem; border-radius: 8px; text-align: center; height: 100%;">
+                    <div style="font-size: 1.5rem;">💰</div>
+                    <strong style="font-size: 0.9rem; color: #0c4a6e;">Tamanho Econômico</strong>
+                    <p style="font-size: 0.75rem; color: #374151; margin: 0;">
+                        Regiões com economias mais fortes no setor têm maior chance de absorver o impacto.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown("""
+                <div style="background-color: #f0fdf4; padding: 0.75rem; border-radius: 8px; text-align: center; height: 100%;">
+                    <div style="font-size: 1.5rem;">🗺️</div>
+                    <strong style="font-size: 0.9rem; color: #166534;">Proximidade Geográfica</strong>
+                    <p style="font-size: 0.75rem; color: #374151; margin: 0;">
+                        Quanto mais perto da origem, mais forte o impacto. O efeito diminui com a distância.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
 
         # Seção de status atual
         if st.session_state.regiao_ativa:
