@@ -25,36 +25,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS Mínimo e Seguro para toques de design premium
+# CSS Ultra-Mínimo - Apenas o essencial sem interferir nos ícones
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-    /* Define a fonte para o texto geral, mas evita afetar ícones */
-    html, body, [class*="st-"], .st-emotion-cache {
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* Estilo para os cards - usando uma classe customizada (SEGURO) */
-    .card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        border: 1px solid #e2e8f0;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-    }
-
-    /* Garante que os botões primários tenham texto branco (SEGURO) */
+    /* Apenas garante que os botões primários tenham texto branco */
     .stButton > button[kind="primary"] {
-        color: white;
+        color: white !important;
     }
-
-    /* Remove a borda padrão do expander para um visual mais limpo */
-    .st-emotion-cache-1340p6x {
-        border: none !important;
-    }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -1475,19 +1452,8 @@ def criar_secao_validacao_modelo():
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Matriz Leontief", "⚙️ Parâmetros", "📈 Multiplicadores", "🎯 Metodologia"])
 
     with tab1:
-        st.markdown("""
-        <div class="card">
-            <div class="card-header">
-                <span>📊</span>
-                <span>Matriz de Impactos (I - A)⁻¹</span>
-            </div>
-            <div class="card-body">
-                <p style="color: var(--gray-600); margin-bottom: 1.5rem;">
-                    Mostra quanto cada setor produz para atender uma unidade de demanda final
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("📊 **Matriz de Impactos (I - A)⁻¹**")
+        st.caption("Mostra quanto cada setor produz para atender uma unidade de demanda final")
 
         # Exibir matriz L com formatação elegante
         matriz_styled = matriz_L_df.style.format("{:.3f}")
