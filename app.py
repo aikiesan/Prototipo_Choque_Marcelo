@@ -160,32 +160,90 @@ def main():
                 legend_name='Impacto Econômico'
             ).add_to(mapa)
 
-        # Camada de interação
-        folium.GeoJson(
+        # Camada de interação otimizada para cliques
+        geojson_layer = folium.GeoJson(
             gdf,
             style_function=lambda feature: {
-                'fillColor': 'orange' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'transparent',
-                'color': 'red' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'gray',
-                'weight': 2 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 0.5,
-                'fillOpacity': 0.3
+                'fillColor': 'orange' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'lightblue',
+                'color': 'red' if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 'blue',
+                'weight': 3 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 1,
+                'fillOpacity': 0.7 if feature['properties']['NM_RGINT'] == st.session_state.regiao_ativa else 0.3,
+                'opacity': 1
             },
             tooltip=folium.GeoJsonTooltip(
                 fields=['NM_RGINT'],
-                aliases=['Região:']
-            )
-        ).add_to(mapa)
+                aliases=['Região:'],
+                localize=True,
+                sticky=True,
+                labels=True,
+                style="""
+                    background-color: white;
+                    border: 2px solid black;
+                    border-radius: 3px;
+                    box-shadow: 3px;
+                """
+            ),
+            popup=folium.GeoJsonPopup(
+                fields=['NM_RGINT'],
+                aliases=['Região:'],
+                localize=True,
+                labels=True
+            ),
+            highlight_function=lambda x: {
+                'weight': 3,
+                'color': 'orange',
+                'fillOpacity': 0.7
+            }
+        )
+        geojson_layer.add_to(mapa)
 
-        # Renderizar mapa
-        map_data = st_folium(mapa, use_container_width=True, height=600)
+        # Renderizar mapa com configurações otimizadas para cliques
+        map_data = st_folium(
+            mapa,
+            use_container_width=True,
+            height=600,
+            returned_objects=["last_object_clicked_tooltip", "last_clicked", "last_object_clicked"]
+        )
 
-        # Detectar clique com tratamento de erro robusto
+        # Debug: Mostrar dados do mapa para diagnosticar problema
+        if map_data:
+            with st.expander("🔧 Debug - Dados do Mapa (temporário)", expanded=False):
+                st.write("**Chaves disponíveis:**", list(map_data.keys()) if map_data else [])
+                if map_data.get('last_object_clicked_tooltip'):
+                    st.write("**Tooltip clicado:**", map_data.get('last_object_clicked_tooltip'))
+                if map_data.get('last_object_clicked'):
+                    st.write("**Objeto clicado:**", map_data.get('last_object_clicked'))
+                if map_data.get('last_clicked'):
+                    st.write("**Último clique:**", map_data.get('last_clicked'))
+
+        # Detectar cliques usando múltiplas estratégias
+        nova_regiao = None
+
+        # Estratégia 1: Tooltip clique (principal)
         if map_data and map_data.get('last_object_clicked_tooltip'):
             tooltip_data = map_data.get('last_object_clicked_tooltip')
             if tooltip_data and isinstance(tooltip_data, dict):
                 nova_regiao = tooltip_data.get('Região:')
-                if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
-                    st.session_state.regiao_ativa = nova_regiao
-                    st.rerun()
+
+        # Estratégia 2: Objeto clicado (fallback)
+        if not nova_regiao and map_data and map_data.get('last_object_clicked'):
+            obj_data = map_data.get('last_object_clicked')
+            if obj_data and isinstance(obj_data, dict):
+                properties = obj_data.get('properties', {})
+                nova_regiao = properties.get('NM_RGINT')
+
+        # Estratégia 3: Clique geral (último recurso)
+        if not nova_regiao and map_data and map_data.get('last_clicked'):
+            click_data = map_data.get('last_clicked')
+            if click_data and isinstance(click_data, dict):
+                # Tentar extrair região do clique
+                pass
+
+        # Atualizar região ativa se nova região foi detectada
+        if nova_regiao and nova_regiao != st.session_state.regiao_ativa:
+            st.session_state.regiao_ativa = nova_regiao
+            st.success(f"🎯 Região selecionada: {nova_regiao}")
+            st.rerun()
 
     # ==============================================================================
     # PAINEL DE CONTROLE E DASHBOARD (40%)
@@ -201,6 +259,20 @@ def main():
             st.metric("Regiões", len(gdf))
         with col2:
             st.metric("Setores", 4)
+
+        # Fallback: Seleção por lista caso clique não funcione
+        st.markdown("### 📋 Seleção Alternativa")
+        lista_regioes = ['Selecione...'] + sorted(gdf['NM_RGINT'].unique().tolist())
+        regiao_selecionada = st.selectbox(
+            "Ou selecione uma região da lista:",
+            options=lista_regioes,
+            key='regiao_lista'
+        )
+
+        if regiao_selecionada != 'Selecione...' and regiao_selecionada != st.session_state.regiao_ativa:
+            st.session_state.regiao_ativa = regiao_selecionada
+            st.success(f"✅ Região selecionada via lista: {regiao_selecionada}")
+            st.rerun()
 
         st.markdown("---")
 
