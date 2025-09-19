@@ -25,12 +25,244 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS Ultra-Mínimo - Apenas o essencial sem interferir nos ícones
+# CSS Design System - Professional and Modern UI
 st.markdown("""
 <style>
-    /* Apenas garante que os botões primários tenham texto branco */
-    .stButton > button[kind="primary"] {
+    /* ====== DESIGN SYSTEM VARIABLES ====== */
+    :root {
+        --primary-50: #eff6ff;
+        --primary-100: #dbeafe;
+        --primary-500: #3b82f6;
+        --primary-600: #2563eb;
+        --primary-700: #1d4ed8;
+
+        --success-50: #ecfdf5;
+        --success-100: #d1fae5;
+        --success-500: #10b981;
+        --success-600: #059669;
+
+        --warning-50: #fffbeb;
+        --warning-100: #fef3c7;
+        --warning-500: #f59e0b;
+        --warning-600: #d97706;
+
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ====== ENHANCED BUTTONS ====== */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600)) !important;
         color: white !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s ease !important;
+        box-shadow: var(--shadow-sm) !important;
+        text-transform: none !important;
+        letter-spacing: 0.025em !important;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: var(--shadow-md) !important;
+        background: linear-gradient(135deg, var(--primary-600), var(--primary-700)) !important;
+    }
+
+    .stButton > button:active {
+        transform: translateY(0) !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+
+    /* ====== ENHANCED METRICS & CARDS ====== */
+    .metric-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-500), var(--success-500));
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* ====== IMPROVED FORM CONTROLS ====== */
+    .stSlider > div > div > div > div {
+        background: linear-gradient(90deg, var(--primary-500), var(--success-500)) !important;
+        border-radius: var(--radius-sm) !important;
+    }
+
+    .stSlider > div > div > div > div > div {
+        background: white !important;
+        border: 2px solid var(--primary-500) !important;
+        box-shadow: var(--shadow-md) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .stSlider > div > div > div > div > div:hover {
+        transform: scale(1.1) !important;
+        box-shadow: var(--shadow-lg) !important;
+    }
+
+    /* ====== RADIO BUTTONS ====== */
+    .stRadio > div {
+        background: var(--gray-50);
+        border-radius: var(--radius-md);
+        padding: 0.75rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+    }
+
+    .stRadio > div:hover {
+        background: var(--gray-100);
+        border-color: var(--primary-300);
+    }
+
+    /* ====== ENHANCED CONTAINERS ====== */
+    .main-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .info-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        border-left: 4px solid var(--primary-500);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+
+    .info-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateX(2px);
+    }
+
+    /* ====== EXPANDER IMPROVEMENTS ====== */
+    .streamlit-expanderHeader {
+        background: var(--gray-50) !important;
+        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--gray-200) !important;
+        padding: 0.75rem 1rem !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .streamlit-expanderHeader:hover {
+        background: var(--primary-50) !important;
+        border-color: var(--primary-300) !important;
+    }
+
+    /* ====== ANIMATIONS ====== */
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .animate-slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+
+    /* ====== IMPROVED TYPOGRAPHY ====== */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--gray-800) !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.025em !important;
+    }
+
+    .subtitle {
+        color: var(--gray-600) !important;
+        font-size: 0.875rem !important;
+        margin-top: -0.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* ====== PLOTLY CHART ENHANCEMENTS ====== */
+    .js-plotly-plot {
+        border-radius: var(--radius-md) !important;
+        overflow: hidden !important;
+        box-shadow: var(--shadow-sm) !important;
+    }
+
+    /* ====== RESPONSIVE IMPROVEMENTS ====== */
+    @media (max-width: 768px) {
+        .metric-card {
+            padding: 1rem;
+        }
+
+        .stButton > button {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.8rem !important;
+        }
+    }
+
+    /* ====== LOADING STATES ====== */
+    .stSpinner {
+        border-color: var(--primary-500) !important;
+    }
+
+    /* ====== STATUS INDICATORS ====== */
+    .status-active {
+        background: var(--success-100);
+        color: var(--success-600);
+        border: 1px solid var(--success-200);
+        border-radius: var(--radius-sm);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-inactive {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-sm);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -460,32 +692,30 @@ def criar_controles_simulacao_sidebar(df_economia):
     # Verificar se uma região foi selecionada
     if st.session_state.regiao_ativa is None:
         st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            border-radius: 12px;
-            padding: 2rem;
-            border: 2px dashed #94a3b8;
+        <div class="metric-card animate-slide-in" style="
+            background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            border: 2px dashed var(--primary-300);
         ">
-            <div style="font-size: 3rem; margin-bottom: 1rem; animation: pulse 2s infinite;">👆</div>
-            <h3 style="color: #1e293b; margin-bottom: 1rem;">Como começar sua simulação</h3>
-            <div style="text-align: left; max-width: 280px; margin: 0 auto;">
+            <div class="animate-pulse" style="font-size: 3rem; margin-bottom: 1rem;">👆</div>
+            <h3 style="color: var(--gray-800); margin-bottom: 1rem;">Como começar sua simulação</h3>
+            <div style="text-align: left; max-width: 300px; margin: 0 auto;">
                 <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">1</span>
-                    <span style="color: #374151; font-size: 0.875rem;">Clique em uma região imediata no mapa</span>
+                    <span style="background: var(--primary-500); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold; box-shadow: var(--shadow-sm);">1</span>
+                    <span style="color: var(--gray-700); font-size: 0.875rem;">Clique em uma região imediata no mapa</span>
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #10b981; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">2</span>
-                    <span style="color: #374151; font-size: 0.875rem;">Escolha o setor econômico</span>
+                    <span style="background: var(--success-500); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold; box-shadow: var(--shadow-sm);">2</span>
+                    <span style="color: var(--gray-700); font-size: 0.875rem;">Escolha o setor econômico</span>
                 </div>
                 <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">3</span>
-                    <span style="color: #374151; font-size: 0.875rem;">Defina o valor do investimento</span>
+                    <span style="background: var(--warning-500); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold; box-shadow: var(--shadow-sm);">3</span>
+                    <span style="color: var(--gray-700); font-size: 0.875rem;">Defina o valor do investimento</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <span style="background: #8b5cf6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold;">4</span>
-                    <span style="color: #374151; font-size: 0.875rem;">Execute e veja os resultados</span>
+                    <span style="background: #8b5cf6; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 0.75rem; font-weight: bold; box-shadow: var(--shadow-sm);">4</span>
+                    <span style="color: var(--gray-700); font-size: 0.875rem;">Execute e veja os resultados</span>
                 </div>
             </div>
         </div>
@@ -493,16 +723,9 @@ def criar_controles_simulacao_sidebar(df_economia):
 
         # Informações adicionais sobre o modelo
         st.markdown("""
-        <div style="
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            border-left: 4px solid #3b82f6;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
-        ">
-            <h4 style="color: #1e293b; margin: 0 0 0.5rem 0; font-size: 0.9rem;">💡 Sobre o modelo</h4>
-            <p style="color: #64748b; margin: 0; font-size: 0.8rem; line-height: 1.4;">
+        <div class="info-card">
+            <h4 style="color: var(--gray-800); margin: 0 0 0.5rem 0; font-size: 0.9rem;">💡 Sobre o modelo</h4>
+            <p style="color: var(--gray-600); margin: 0; font-size: 0.8rem; line-height: 1.5;">
                 Utilizamos o modelo Input-Output de Leontief para calcular os <strong>impactos econômicos diretos, indiretos e induzidos</strong>
                 do seu investimento em todas as 133 regiões imediatas do Brasil.
             </p>
@@ -515,23 +738,21 @@ def criar_controles_simulacao_sidebar(df_economia):
 
     # Cabeçalho elegante da simulação
     st.markdown(f"""
-    <div style="
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    <div class="animate-slide-in" style="
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
         color: white;
         padding: 1rem 1.5rem;
-        border-radius: 12px 12px 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         margin-bottom: 0;
         font-weight: 600;
+        box-shadow: var(--shadow-md);
     ">
         🚀 Simulação: {st.session_state.regiao_ativa}
     </div>
-    <div style="
-        background: white;
-        border: 1px solid #e2e8f0;
+    <div class="metric-card" style="
+        margin-top: 0;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
         border-top: none;
-        border-radius: 0 0 12px 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     ">
     """, unsafe_allow_html=True)
 
@@ -585,29 +806,27 @@ def criar_controles_simulacao_sidebar(df_economia):
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"""
-        <div style="
-            background: #ecfdf5;
-            border: 1px solid #86efac;
-            padding: 0.75rem;
-            border-radius: 8px;
+        <div class="metric-card" style="
+            background: var(--success-50);
+            border: 1px solid var(--success-200);
             text-align: center;
+            padding: 1rem;
         ">
-            <div style="font-size: 1.25rem; font-weight: bold; color: #166534;">R$ {valor_choque:,.1f}M</div>
-            <div style="font-size: 0.75rem; color: #15803d;">Investimento</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: var(--success-700);">R$ {valor_choque:,.1f}M</div>
+            <div style="font-size: 0.8rem; color: var(--success-600); margin-top: 0.25rem;">💰 Investimento</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
-        <div style="
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
-            padding: 0.75rem;
-            border-radius: 8px;
+        <div class="metric-card" style="
+            background: var(--warning-50);
+            border: 1px solid var(--warning-200);
             text-align: center;
+            padding: 1rem;
         ">
-            <div style="font-size: 1.25rem; font-weight: bold; color: #92400e;">R$ {vab_setor:,.1f}M</div>
-            <div style="font-size: 0.75rem; color: #a16207;">VAB Base</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: var(--warning-700);">R$ {vab_setor:,.1f}M</div>
+            <div style="font-size: 0.8rem; color: var(--warning-600); margin-top: 0.25rem;">📊 VAB Base</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -672,29 +891,29 @@ def gerenciar_simulacoes(df_economia):
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"""
-        <div style="
-            background: #ecfdf5;
-            border: 1px solid #86efac;
-            padding: 0.5rem;
-            border-radius: 6px;
+        <div class="metric-card" style="
+            background: var(--success-50);
+            border: 1px solid var(--success-200);
             text-align: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
         ">
-            <div style="font-size: 1rem; font-weight: bold; color: #166534;">{len(st.session_state.simulacoes)}</div>
-            <div style="font-size: 0.7rem; color: #15803d;">Total</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--success-700);">{len(st.session_state.simulacoes)}</div>
+            <div style="font-size: 0.75rem; color: var(--success-600);">📊 Total</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
-        <div style="
-            background: #dbeafe;
-            border: 1px solid #60a5fa;
-            padding: 0.5rem;
-            border-radius: 6px;
+        <div class="metric-card" style="
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
             text-align: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
         ">
-            <div style="font-size: 1rem; font-weight: bold; color: #1d4ed8;">{simulacoes_ativas}</div>
-            <div style="font-size: 0.7rem; color: #2563eb;">Ativas</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary-700);">{simulacoes_ativas}</div>
+            <div style="font-size: 0.75rem; color: var(--primary-600);">⚡ Ativas</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -757,9 +976,14 @@ def criar_sidebar_controles(df_economia, gdf):
         # Instruções step-by-step compactas
         with st.container():
             st.markdown("""
-            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem;">
-                <div style="font-size: 0.8rem; font-weight: 600; color: #0c4a6e; margin-bottom: 0.4rem;">📋 Como simular:</div>
-                <div style="font-size: 0.7rem; color: #475569; line-height: 1.2;">
+            <div class="info-card" style="
+                background: var(--primary-50);
+                border: 1px solid var(--primary-200);
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            ">
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-700); margin-bottom: 0.5rem;">📋 Como simular:</div>
+                <div style="font-size: 0.75rem; color: var(--gray-600); line-height: 1.4;">
                     <strong>1️⃣</strong> Escolha o setor • <strong>2️⃣</strong> Clique no mapa<br>
                     <strong>3️⃣</strong> Ajuste o valor • <strong>4️⃣</strong> Execute simulação
                 </div>
@@ -815,12 +1039,17 @@ def criar_sidebar_controles(df_economia, gdf):
 
                 # Exibe o resultado do cálculo em um card informativo
                 st.markdown(f"""
-                <div style="background: #ecfdf5; border: 1px solid #86efac; padding: 0.75rem; border-radius: 8px; text-align: center; margin-top: 0.5rem;">
-                    <div style="font-size: 0.75rem; color: #15803d; text-transform: uppercase;">Valor do Investimento</div>
-                    <div style="font-size: 1.25rem; font-weight: bold; color: #166534;">
+                <div class="metric-card animate-slide-in" style="
+                    background: var(--success-50);
+                    border: 1px solid var(--success-200);
+                    text-align: center;
+                    margin-top: 0.75rem;
+                ">
+                    <div style="font-size: 0.8rem; color: var(--success-600); text-transform: uppercase; font-weight: 600;">💰 Valor do Investimento</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: var(--success-700); margin: 0.5rem 0;">
                         R$ {valor_investimento:,.2f} Milhões
                     </div>
-                    <div style="font-size: 0.75rem; color: #6b7280;">(Base: VAB de R$ {vab_setor:,.1f} M)</div>
+                    <div style="font-size: 0.75rem; color: var(--gray-500);">(Base: VAB de R$ {vab_setor:,.1f} M)</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -829,11 +1058,15 @@ def criar_sidebar_controles(df_economia, gdf):
         else:
             valor_investimento = 0
             st.markdown("""
-            <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
-                <div style="color: #92400e; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <div class="info-card" style="
+                background: var(--warning-50);
+                border: 1px solid var(--warning-200);
+                margin-top: 0.75rem;
+            ">
+                <div style="color: var(--warning-700); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
                     🗺️ Aguardando seleção da região
                 </div>
-                <div style="color: #a16207; font-size: 0.75rem;">
+                <div style="color: var(--warning-600); font-size: 0.75rem; line-height: 1.4;">
                     Clique em uma região imediata no mapa ao lado para definir onde será feito o investimento.
                     O valor será calculado automaticamente com base no percentual escolhido.
                 </div>
@@ -890,11 +1123,15 @@ def criar_sidebar_controles(df_economia, gdf):
         # Seção de status atual
         if st.session_state.regiao_ativa:
             st.markdown(f"""
-            <div style="background: #ecfdf5; border: 1px solid #86efac; padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem;">
-                <div style="color: #059669; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">
+            <div class="info-card animate-slide-in" style="
+                background: var(--success-50);
+                border: 1px solid var(--success-200);
+                margin-top: 0.75rem;
+            ">
+                <div style="color: var(--success-700); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
                     ✅ Simulação Configurada
                 </div>
-                <div style="color: #047857; font-size: 0.75rem; line-height: 1.3;">
+                <div style="color: var(--success-600); font-size: 0.75rem; line-height: 1.4;">
                     📍 <strong>Região Imediata:</strong> {st.session_state.regiao_ativa}<br>
                     🏭 <strong>Setor:</strong> {setor_selecionado}<br>
                     📊 <strong>Percentual:</strong> {percentual_choque:.1f}% do VAB setorial<br>
@@ -904,11 +1141,15 @@ def criar_sidebar_controles(df_economia, gdf):
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
-            <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 0.75rem; border-radius: 6px; margin-top: 0.75rem;">
-                <div style="color: #92400e; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+            <div class="info-card" style="
+                background: var(--warning-50);
+                border: 1px solid var(--warning-200);
+                margin-top: 0.75rem;
+            ">
+                <div style="color: var(--warning-700); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
                     ⏳ Aguardando Configuração
                 </div>
-                <div style="color: #a16207; font-size: 0.75rem;">
+                <div style="color: var(--warning-600); font-size: 0.75rem; line-height: 1.4;">
                     Clique em uma região imediata no mapa para começar a simulação
                 </div>
             </div>
@@ -923,19 +1164,31 @@ def criar_sidebar_controles(df_economia, gdf):
         # Informação compacta sobre região ativa (se houver)
         if st.session_state.regiao_ativa:
             st.markdown(f"""
-            <div style="background: #ecfdf5; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; text-align: center;">
-                <div style="font-size: 0.7rem; color: #059669; font-weight: 600;">
+            <div class="metric-card" style="
+                background: var(--success-50);
+                border: 1px solid var(--success-200);
+                padding: 0.75rem;
+                margin-top: 0.5rem;
+                text-align: center;
+            ">
+                <div style="font-size: 0.75rem; color: var(--success-700); font-weight: 600;">
                     📍 {st.session_state.regiao_ativa[:15]}...
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Contador de simulações (se houver)
         if len(st.session_state.simulacoes) > 0:
             simulacoes_ativas = len([s for s in st.session_state.simulacoes if s['ativa']])
             st.markdown(f"""
-            <div style="background: #dbeafe; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; text-align: center;">
-                <div style="font-size: 0.7rem; color: #1d4ed8; font-weight: 600;">
+            <div class="metric-card" style="
+                background: var(--primary-50);
+                border: 1px solid var(--primary-200);
+                padding: 0.75rem;
+                margin-top: 0.5rem;
+                text-align: center;
+            ">
+                <div style="font-size: 0.75rem; color: var(--primary-700); font-weight: 600;">
                     📊 {simulacoes_ativas} ativa(s)
                 </div>
             </div>
