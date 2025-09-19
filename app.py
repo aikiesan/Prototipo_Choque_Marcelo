@@ -2002,9 +2002,6 @@ def criar_secao_analise_tecnica():
     <div style="text-align: center; padding: 2rem 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; margin-bottom: 2rem;">
         <h1 style="margin: 0; font-size: 2.5rem;">📋 Análise Científica</h1>
         <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem;">Validação Técnica e Científica dos Dados</p>
-        <div style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 25px; display: inline-block;">
-            <span style="font-size: 1.2rem; font-weight: bold;">✅ CIENTIFICAMENTE VALIDADO</span>
-        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -2277,10 +2274,10 @@ def criar_secao_analise_tecnica():
         st.markdown("#### 🏛️ Fontes Oficiais de Dados")
 
         fontes_oficiais = [
-            ("IBGE - PIB dos Municípios 2021", "VAB por município agregado por região imediata", "https://ftp.ibge.gov.br/Pib_Municipios/2021/base/"),
-            ("IBGE - Tabela de Recursos e Usos (TRU) 2017", "Matriz de coeficientes técnicos", "https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/"),
-            ("IBGE - Regiões Imediatas 2017", "Divisão territorial brasileira", "https://www.ibge.gov.br/geociencias/organizacao-do-territorio/"),
-            ("IBGE - Sistema de Contas Nacionais", "Metodologia de VAB setorial", "https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/"),
+            ("IBGE - PIB dos Municípios 2021", "VAB por município agregado por região imediata", "https://ftp.ibge.gov.br/Pib_Municipios/2021/base/base_de_dados_2010_2021_txt.zip"),
+            ("IBGE - Tabela de Recursos e Usos (TRU) 2020", "Matriz de coeficientes técnicos", "https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9052-sistema-de-contas-nacionais-brasil.html"),
+            ("IBGE - Regiões Geográficas Imediatas 2017", "Divisão territorial brasileira", "https://www.ibge.gov.br/geociencias/organizacao-do-territorio/divisao-regional/18354-regioes-geograficas-intermediarias-e-imediatas.html"),
+            ("IBGE - Sistema de Contas Regionais", "Metodologia de VAB setorial", "https://www.ibge.gov.br/estatisticas/economicas/contas-regionais/9054-contas-regionais-do-brasil.html"),
             ("Receita Federal - Carga Tributária", "18% sobre VAB", "https://www.gov.br/receitafederal/")
         ]
 
