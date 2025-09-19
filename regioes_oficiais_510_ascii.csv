@@ -1,0 +1,511 @@
+codigo_regiao,nome_regiao
+110001,Porto Velho
+110002,Ariquemes
+110003,Jaru
+110004,Ji-ParanA
+110005,Cacoal
+110006,Vilhena
+120001,Rio Branco
+120002,BrasilAia
+120003,Sena Madureira
+120004,Cruzeiro do Sul
+120005,TarauacA
+130001,Manaus
+130002,SAo Gabriel da Cachoeira
+130003,Coari
+130004,Manacapuru
+130005,TefA
+130006,Tabatinga
+130007,EirunepA
+130008,LAbrea
+130009,ManicorA
+130010,Parintins
+130011,Itacoatiara
+140001,Boa Vista
+140002,Pacaraima
+140003,RorainApolis
+140004,CaracaraA
+150001,BelAm
+150002,CametA
+150003,Abaetetuba
+150004,Castanhal
+150005,BraganAa
+150006,Capanema
+150007,Paragominas
+150008,CapitAo PoAo
+150009,MarabA
+150010,Parauapebas
+150011,TucuruA
+150012,RedenAAo
+150013,TucumA - SAo FAlix do Xingu
+150014,Xinguara
+150015,SantarAm
+150016,Itaituba
+150017,OriximinA
+150018,Altamira
+150019,Almeirim - Porto de Moz
+150020,Breves
+150021,Soure-Salvaterra
+160001,MacapA
+160002,Laranjal do Jari
+160003,Oiapoque
+160004,Porto Grande
+170001,Palmas
+170002,Porto Nacional
+170003,ParaAso do Tocantins
+170004,Miracema do Tocantins
+170005,AraguaAna
+170006,GuaraA
+170007,Colinas do Tocantins
+170008,TocantinApolis
+170009,Araguatins
+170010,Gurupi
+170011,DianApolis
+210001,SAo LuAs
+210002,Pinheiro
+210003,Chapadinha
+210004,Itapecuru Mirim
+210005,Viana
+210006,Barreirinhas
+210007,TutAia - Araioses
+210008,Cururupu
+210009,Santa InAs
+210010,Bacabal
+210011,Governador Nunes Freire
+210012,Pedreiras
+210013,Caxias
+210014,Timon
+210015,CodA
+210016,Presidente Dutra
+210017,SAo JoAo dos Patos
+210018,Colinas
+210019,Imperatriz
+210020,Barra do Corda
+210021,AAailAndia
+210022,Balsas
+220001,Teresina
+220002,Amarante - Agua Branca - RegeneraAAo
+220003,Campo Maior
+220004,ValenAa do PiauA
+220005,Barras
+220006,ParnaAba
+220007,Piripiri
+220008,Esperantina
+220009,Picos
+220010,Paulistana
+220011,Oeiras
+220012,SimplAcio Mendes
+220013,SAo Raimundo Nonato
+220014,SAo JoAo do PiauA
+220015,Corrente
+220016,Bom Jesus
+220017,Floriano
+220018,UruAuA
+220019,Canto do Buriti
+230001,Fortaleza
+230002,Itapipoca
+230003,RedenAAo-Acarape
+230004,CanindA
+230005,ItapagA
+230006,QuixadA
+230007,Russas - Limoeiro do Norte
+230008,Aracati
+230009,Iguatu
+230010,IcA
+230011,Juazeiro do Norte
+230012,Brejo Santo
+230013,CrateAs
+230014,TauA
+230015,Sobral
+230016,SAo Benedito - Ipu - Guaraciaba do Norte - TianguA
+230017,AcaraA
+230018,Camocim
+240001,Natal
+240002,Santo AntAnio - Passa e Fica - Nova Cruz
+240003,Canguaretama
+240004,Santa Cruz
+240005,JoAo CAmara
+240006,SAo Paulo do Potengi
+240007,CaicA
+240008,Currais Novos
+240009,MossorA
+240010,Pau dos Ferros
+240011,AAu
+250001,JoAo Pessoa
+250002,Guarabira
+250003,Mamanguape - Rio Tinto
+250004,Itabaiana
+250005,Campina Grande
+250006,CuitA - Nova Floresta
+250007,Monteiro
+250008,SumA
+250009,Patos
+250010,Itaporanga
+250011,CatolA do Rocha - SAo Bento
+250012,Pombal
+250013,Princesa Isabel
+250014,Sousa
+250015,Cajazeiras
+260001,Recife
+260002,Goiana a TimbaAba
+260003,Palmares
+260004,Limoeiro
+260005,VitAria de Santo AntAo
+260006,Carpina
+260007,Barreiros - SirinhaAm
+260008,Surubim
+260018,Caruaru
+260009,Garanhuns
+260010,Arcoverde
+260011,Belo Jardim a Pesqueira
+260012,Serra Talhada
+260013,Afogados da Ingazeira
+260014,Petrolina
+260015,Araripina
+260016,Salgueiro
+260017,Escada - RibeirAo
+270001,MaceiA
+270002,Porto Calvo - SAo LuAs do Quitunde
+270003,Penedo
+270004,SAo Miguel dos Campos
+270005,UniAo dos Palmares
+270006,Atalaia
+270007,Arapiraca
+270008,Palmeira dos Andios
+270009,Delmiro Gouveia
+270010,Santana do Ipanema
+270011,PAo de AAAcar - Olho d'Agua das Flores a Batalha
+280001,Aracaju
+280002,EstAncia
+280003,PropriA
+250004,Itabaiana
+280005,Lagarto
+280006,Nossa Senhora da GlAria
+290001,Salvador
+290002,Alagoinhas
+290003,Santo AntAnio de Jesus
+290004,Cruz das Almas
+290005,ValenAa
+290006,NazarA a Maragogipe
+290007,IlhAus a Itabuna
+290008,Teixeira de Freitas
+290009,EunApolis - Porto Seguro
+290010,Camacan
+290011,VitAria da Conquista
+290012,JequiA
+290013,Brumado
+290014,IpiaA
+290015,Itapetinga
+290016,Guanambi
+290017,Bom Jesus da Lapa
+290018,Barreiras
+290019,Santa Maria da Vitoria
+290020,IrecA
+290021,Xique-Xique a Barra
+290022,Juazeiro
+290023,Senhor do Bonfim
+290024,Paulo Afonso
+290025,Ribeira do Pombal
+290026,Euclides da Cunha
+290027,CAcero Dantas
+290028,Jeremoabo
+290029,Feira de Santana
+290030,Jacobina
+290031,Itaberaba
+290032,ConceiAAo do CoitA
+290033,Serrinha
+290034,Seabra
+500001,Belo Horizonte
+500002,Sete Lagoas
+500003,Santa BArbara - Ouro Preto
+500004,Curvelo
+500005,Itabira
+500006,Montes Claros
+500007,JanaAba
+500008,Salinas
+500009,JanuAria
+500010,Pirapora
+500011,SAo Francisco
+500012,Espinosa
+510001,TeAfilo Otoni
+510002,Capelinha
+510003,Almenara
+510004,Diamantina
+510005,AraAuaA
+510006,Pedra Azul
+510007,Aguas Formosas
+510008,Governador Valadares
+510009,GuanhAes
+510010,Mantena
+510011,AimorAs - Resplendor
+510012,Ipatinga
+510013,Caratinga
+510014,JoAo Monlevade
+510015,Juiz de Fora
+510016,ManhuaAu
+510017,UbA
+510018,Ponte Nova
+520001,MuriaA
+520002,Cataguases
+520003,ViAosa
+520004,Carangola
+520005,SAo JoAo Nepomuceno - Bicas
+520006,AlAm ParaAba
+520007,Barbacena
+520008,Conselheiro Lafaiete
+520009,SAo JoAo del Rei
+520010,Varginha
+520011,Passos
+520012,Alfenas
+520013,Lavras
+520014,GuaxupA
+520015,TrAs CoraAAes
+520016,TrAs Pontas - Boa EsperanAa
+520017,SAo SebastiAo do ParaAso
+520018,Campo Belo
+520019,Piumhi
+520020,Pouso Alegre
+520021,PoAos de Caldas
+520022,ItajubA
+530001,SAo LourenAo
+310001,Caxambu - Baependi
+310002,Uberaba
+310003,AraxA
+310004,Frutal
+310005,Iturama
+310006,UberlAndia
+310007,Ituiutaba
+310008,Monte Carmelo
+310009,Patos de Minas
+310010,UnaA
+310011,PatrocAnio
+310012,DivinApolis
+310013,Formiga
+310014,Dores do IndaiA
+310015,ParA de Minas
+310016,Oliveira
+310017,AbaetA
+310018,VitAria
+310019,Afonso ClAudio - Venda Nova do Imigrante - Santa Maria de JetibA
+310020,SAo Mateus
+310021,Linhares
+310022,Colatina
+310023,Nova VenAcia
+310024,Cachoeiro de Itapemirim
+310025,Alegre
+310026,Rio de Janeiro
+310027,Angra dos Reis
+310028,Rio Bonito
+310029,Volta Redonda - Barra Mansa
+310030,Resende
+290005,ValenAa
+310032,PetrApolis
+310033,Nova Friburgo
+310034,TrAs Rios - ParaAba do Sul
+310035,Campos dos Goytacazes
+310036,Itaperuna
+310037,Santo AntAnio de PAdua
+310038,Cabo Frio
+310039,MacaA - Rio das Ostras
+310040,SAo Paulo
+310041,Santos
+310042,Sorocaba
+310043,Itapeva
+310044,Registro
+310045,Itapetininga
+310046,AvarA
+310047,TatuA
+310048,Bauru
+310049,JaA
+310050,Botucatu
+310051,Lins
+310052,MarAlia
+310053,Assis
+310054,Ourinhos
+310055,TupA
+310056,Piraju
+310057,Presidente Prudente
+310058,Adamantina - LucAlia
+310059,Dracena
+310060,Presidente EpitAcio-Presidente Venceslau
+310061,AraAatuba
+310062,Birigui - PenApolis
+310063,Andradina
+310064,SAo JosA do Rio Preto
+310065,Catanduva
+310066,Votuporanga
+310067,Jales
+310068,FernandApolis
+310069,Santa FA do Sul
+310070,RibeirAo Preto
+320001,Barretos
+320002,Franca
+320003,SAo Joaquim da Barra a OrlAndia
+320004,Ituverava
+320005,Araraquara
+320006,SAo Carlos
+320007,Campinas
+320008,JundiaA
+330001,Piracicaba
+330002,BraganAa Paulista
+330003,Limeira
+330004,Mogi GuaAu
+330005,SAo JoAo da Boa Vista
+330006,Araras
+330007,Rio Claro
+330008,SAo JosA do Rio Pardo - Mococa
+330009,Amparo
+330010,SAo JosA dos Campos
+330011,TaubatA - Pindamonhangaba
+330012,Caraguatatuba - Ubatuba - SAo SebastiAo
+330013,GuaratinguetA
+330014,Cruzeiro
+350001,Curitiba
+350002,ParanaguA
+350003,UniAo da VitAria
+350004,Guarapuava
+350005,Pitanga
+350006,Cascavel
+350007,Foz do IguaAu
+350008,Toledo
+350009,Francisco BeltrAo
+350010,Pato Branco
+350011,Laranjeiras do Sul - Quedas do IguaAu
+350012,Dois Vizinhos
+350013,Marechal CAndido Rondon
+350014,MaringA
+350015,Campo MourAo
+350016,Umuarama
+350017,ParanavaA
+350018,Cianorte
+350019,Paranacity - Colorado
+350020,Loanda
+350021,Londrina
+350022,Santo AntAnio da Platina
+350023,Apucarana
+350024,CornAlio ProcApio a Bandeirantes
+350025,IvaiporA
+350026,Ibaiti
+350027,Ponta Grossa
+350028,TelAmaco Borba
+350029,Irati
+350030,FlorianApolis
+350031,CriciAma
+350032,TubarAo
+350033,AraranguA
+350034,Lages
+350035,Curitibanos
+350036,ChapecA
+350037,JoaAaba - Herval d'Oeste
+350038,SAo Miguel do Oeste
+350039,ConcArdia
+350040,XanxerA
+350041,Maravilha
+350042,SAo LourenAo do Oeste
+350043,CaAador
+350044,Videira
+350045,Joinville
+350046,Mafra
+350047,SAo Bento do Sul - Rio Negrinho
+350048,Blumenau
+350049,ItajaA
+350050,Brusque
+350051,Rio do Sul
+350052,Ibirama - Presidente GetAlio
+350053,Ituporanga
+410001,Porto Alegre
+410002,Novo Hamburgo - SAo Leopoldo
+410003,TramandaA - OsArio
+410004,Taquara - ParobA - Igrejinha
+410005,CamaquA
+410006,Charqueadas - Triunfo - SAo JerAnimo
+410007,Montenegro
+410008,Torres
+410009,Pelotas
+410010,BagA
+410011,Santa Maria
+410012,SAo Gabriel - CaAapava do Sul
+410013,Cachoeira do Sul
+410014,Santiago
+410015,Uruguaiana
+410016,Santana do Livramento
+410017,SAo Borja
+410018,IjuA
+410019,Santa Rosa
+410020,Santo Angelo
+410021,TrAs Passos
+410022,SAo Luiz Gonzaga
+410023,TrAs de Maio
+410024,Cerro Largo
+410025,Passo Fundo
+410026,Erechim
+410027,Cruz Alta
+410028,Carazinho
+410029,Frederico Westphalen
+420001,Marau
+420002,Soledade
+420003,Tapejara - Sananduva
+420004,Lagoa Vermelha
+420005,Palmeira das MissAes
+420006,Nonoai
+420007,Caxias do Sul
+420008,Bento GonAalves
+420009,Nova Prata - GuaporA
+420010,Vacaria
+420011,Santa Cruz do Sul
+420012,Lajeado
+420013,Sobradinho
+420014,Encantado
+420015,Campo Grande
+420016,TrAs Lagoas
+420017,ParanaAba - ChapadAo do Sul - CassilAndia
+420018,Coxim
+420019,Dourados
+420020,NaviraA - Mundo Novo
+420021,Nova Andradina
+420022,Ponta PorA
+420023,Amambai
+420024,CorumbA
+430001,Jardim
+430002,Aquidauana - AnastAcio
+430003,CuiabA
+430004,TangarA da Serra
+430005,Diamantino
+430006,CAceres
+430007,Pontes e Lacerda - Comodoro
+430008,Mirassol D'oeste
+430009,Sinop
+430010,Sorriso
+430011,JuAna
+430012,Alta Floresta
+430013,Peixoto de Azevedo - GuarantA do Norte
+430014,Juara
+430015,Barra do GarAas
+430016,Confresa - Vila Rica
+430017,Agua Boa
+430018,RondonApolis
+430019,Primavera do Leste
+430020,Jaciara
+430021,GoiAnia
+430022,AnApolis
+430023,Inhumas - ItaberaA - Anicuns
+430024,CatalAo
+430025,GoiAs - Itapuranga
+430026,Pires do Rio
+430027,Itumbiara
+430028,Caldas Novas-Morrinhos
+430029,Piracanjuba
+430030,Rio Verde
+430031,JataA-Mineiros
+430032,QuirinApolis
+430033,SAo LuAs de Montes Belos
+430034,IporA
+430035,Palmeiras de GoiAs
+430036,Porangatu
+430037,UruaAu - NiquelAndia
+430038,Ceres - Rialma - GoianAsia
+430039,LuziAnia
+430040,Aguas Lindas de GoiAs
+430041,Posse-Campos Belos
+430042,Flores de GoiAs
+430043,Distrito Federal

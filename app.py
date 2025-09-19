@@ -403,15 +403,19 @@ parametros_modelo = {
 
 @st.cache_data(show_spinner="⚡ Carregando geometrias das 510 regiões imediatas...")
 def carregar_dados_geograficos():
-    """Carrega geometrias otimizadas das 510 regiões imediatas."""
+    """Carrega geometrias otimizadas das 510 regiões imediatas com nomes ASCII-safe."""
     try:
-        # Usar o novo shapefile otimizado das 510 regiões imediatas
+        # Try ASCII shapefile first (for deployment)
+        try:
+            gdf = gpd.read_parquet('shapefiles/regioes_imediatas_510_ascii.parquet')
+            gdf['NM_RGINT'] = gdf['NM_RGINT'].astype(str).str.strip()
+            return gdf
+        except FileNotFoundError:
+            pass
+
+        # Fallback to original shapefile (for local development)
         gdf = gpd.read_parquet('shapefiles/regioes_imediatas_510_optimized.parquet')
         gdf['NM_RGINT'] = gdf['NM_RGINT'].astype(str).str.strip()
-
-        # Validate and report duplicates
-        total_regions = len(gdf)
-        unique_regions = gdf['NM_RGINT'].nunique()
 
         # Note: Some regions have identical names in different states (e.g., Itabaiana, Valença)
         # This is handled correctly by the economic data matching system using region codes
@@ -442,63 +446,38 @@ def carregar_dados_geograficos():
 
 @st.cache_data(show_spinner="📊 Carregando dados reais do IBGE (2021)...")
 def carregar_dados_reais_ibge(_gdf):
-    """Carrega dados econômicos reais do IBGE para as regiões imediatas."""
+    """Carrega dados econômicos reais do IBGE pré-processados para as regiões imediatas."""
 
     try:
-        # Import with error handling
-        from ibge_data_parser import parse_ibge_municipal_data, aggregate_by_immediate_region, create_compatible_economic_data
+        # First try to load embedded processed data (for deployment)
+        embedded_file = "dados_ibge_processados_2021.csv"
+        if Path(embedded_file).exists():
+            df_embedded = pd.read_csv(embedded_file)
+            st.success(f"✅ Dados reais do IBGE carregados: {df_embedded['regiao'].nunique()} regiões, {len(df_embedded)} entradas setoriais")
+            return df_embedded
 
-        # Check if IBGE data file exists
-        ibge_file = "PIB dos Municípios - base de dados 2010-2021.txt"
-        if not Path(ibge_file).exists():
-            st.warning(f"⚠️ Arquivo de dados do IBGE não encontrado: {ibge_file}")
-            st.info("📊 Usando dados sintéticos como fallback...")
-            return gerar_dados_sinteticos_fallback(_gdf)
-
-        # Parse IBGE municipal data with detailed error handling
+        # Fallback: Try to process raw IBGE data (for local development)
         try:
-            df_municipal = parse_ibge_municipal_data(ibge_file, 2021)
-            if df_municipal is None or len(df_municipal) == 0:
-                raise ValueError("Nenhum dado municipal foi carregado")
-        except UnicodeEncodeError as e:
-            st.error(f"Erro de codificação ao processar dados do IBGE: {e}")
-            st.info("📊 Usando dados sintéticos como fallback...")
-            return gerar_dados_sinteticos_fallback(_gdf)
-        except Exception as e:
-            st.error(f"Erro ao processar dados municipais: {e}")
-            st.info("📊 Usando dados sintéticos como fallback...")
-            return gerar_dados_sinteticos_fallback(_gdf)
+            from ibge_data_parser import parse_ibge_municipal_data, aggregate_by_immediate_region, create_compatible_economic_data
 
-        # Aggregate by immediate region
-        try:
-            df_regional = aggregate_by_immediate_region(df_municipal)
-            if df_regional is None or len(df_regional) == 0:
-                raise ValueError("Nenhum dado regional foi agregado")
-        except Exception as e:
-            st.error(f"Erro ao agregar dados por região: {e}")
-            st.info("📊 Usando dados sintéticos como fallback...")
-            return gerar_dados_sinteticos_fallback(_gdf)
+            ibge_file = "PIB dos Municípios - base de dados 2010-2021.txt"
+            if Path(ibge_file).exists():
+                df_municipal = parse_ibge_municipal_data(ibge_file, 2021)
+                df_regional = aggregate_by_immediate_region(df_municipal)
+                df_compatible = create_compatible_economic_data(df_regional, _gdf)
 
-        # Create compatible data structure
-        try:
-            df_compatible = create_compatible_economic_data(df_regional, _gdf)
-            if df_compatible is None or len(df_compatible) == 0:
-                raise ValueError("Nenhum dado compatível foi criado")
-
-            st.success(f"✅ Dados reais do IBGE carregados: {len(df_regional)} regiões, {len(df_compatible)} entradas setoriais")
-            return df_compatible
+                st.success(f"✅ Dados reais do IBGE processados: {len(df_regional)} regiões, {len(df_compatible)} entradas setoriais")
+                return df_compatible
 
         except Exception as e:
-            st.error(f"Erro ao criar estrutura de dados compatível: {e}")
-            st.info("📊 Usando dados sintéticos como fallback...")
-            return gerar_dados_sinteticos_fallback(_gdf)
+            st.warning(f"Não foi possível processar dados do IBGE: {e}")
 
-    except ImportError as e:
-        st.error(f"Erro ao importar módulo de dados do IBGE: {e}")
+        # Final fallback: synthetic data
         st.info("📊 Usando dados sintéticos como fallback...")
         return gerar_dados_sinteticos_fallback(_gdf)
+
     except Exception as e:
-        st.error(f"Erro inesperado ao carregar dados do IBGE: {e}")
+        st.error(f"Erro ao carregar dados: {e}")
         st.info("📊 Usando dados sintéticos como fallback...")
         return gerar_dados_sinteticos_fallback(_gdf)
 
