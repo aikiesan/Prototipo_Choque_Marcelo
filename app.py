@@ -277,11 +277,18 @@ def calculate_log_bins(series, num_classes=5):
     Helper robusto para calcular bins logarítmicos.
     Garante que sempre retornará o número correto de bins/labels.
     """
+    # Handle edge cases
+    if len(series) == 0 or series.max() == series.min():
+        # Return simple bins for edge cases
+        return np.linspace(series.min() if len(series) > 0 else 0,
+                          series.max() if len(series) > 0 else 1,
+                          num=num_classes + 1).tolist()
+
     # Remove valores zero ou negativos e outliers extremos para um binning mais estável
     series_positive = series[(series > 0) & (series < series.quantile(0.99))]
-    
+
     # Se houver muito poucos valores únicos, cria bins simples
-    if series_positive.nunique() < num_classes:
+    if series_positive.nunique() < num_classes or len(series_positive) == 0:
         bins = np.linspace(series.min(), series.max(), num=num_classes + 1)
     else:
         # Binning logarítmico para a maioria dos casos
@@ -296,9 +303,12 @@ def calculate_log_bins(series, num_classes=5):
     # Adiciona o zero no início e remove duplicados
     bins = np.insert(bins, 0, 0)
     bins = np.unique(bins)
-    
-    # Se, após tudo, ainda não tivermos bins suficientes, cria linearmente
-    if len(bins) < num_classes:
+
+    # CRITICAL: Ensure we have at least 2 bins and exactly num_classes + 1 bins
+    if len(bins) < 2:
+        bins = np.linspace(series.min(), series.max(), num=2)
+    elif len(bins) != num_classes + 1:
+        # Force the correct number of bins
         bins = np.linspace(series.min(), series.max(), num=num_classes + 1)
 
     return bins.tolist()
@@ -322,7 +332,69 @@ def calcular_distancias(gdf, regiao_origem_nome):
 # MODELO ECONÔMICO AVANÇADO (LEONTIEF INPUT-OUTPUT)
 # ==============================================================================
 
-# Definição dos setores e metadados
+# Função para normalizar strings e evitar problemas de codificação
+def normalizar_string(s):
+    """Normaliza strings para evitar problemas de codificação."""
+    if isinstance(s, str):
+        return s.strip()
+    return s
+
+def corrigir_nomes_regioes():
+    """Cria mapeamento para corrigir nomes de regiões com problemas de encoding."""
+    # Mapeamento das regiões imediatas de São Paulo com nomes corretos do IBGE 2017
+    mapeamento_sp = {
+        '3501': 'São Paulo',
+        '3502': 'Sorocaba',
+        '3503': 'Bauru',
+        '3504': 'Marília',
+        '3505': 'Presidente Prudente',
+        '3506': 'Araçatuba',
+        '3507': 'São José do Rio Preto',
+        '3508': 'Ribeirão Preto',
+        '3509': 'Araraquara',
+        '3510': 'Campinas',
+        '3511': 'São José dos Campos'
+    }
+
+    # Mapeamento de nomes corrompidos para nomes corretos
+    # Baseado na comparação entre dados processados e IBGE oficial
+    correções = {
+        # São Paulo regions - correcting encoding issues
+        'SAo Paulo': 'São Paulo',
+        'SAo JosA do Rio Preto': 'São José do Rio Preto',
+        'SAo JosA dos Campos': 'São José dos Campos',
+        'RibeirAo Preto': 'Ribeirão Preto',
+        'MarAlia': 'Marília',
+        'AraAatuba': 'Araçatuba',
+        'PresA Prudente': 'Presidente Prudente',
+
+        # Common encoding fixes for other states
+        'SAo Gabriel da Cachoeira': 'São Gabriel da Cachoeira',
+        'SAo LuAs': 'São Luís',
+        'BrasilAia': 'Brasileia',
+        'TarauacA': 'Tarauacá',
+        'TefA': 'Tefé',
+        'EirunepA': 'Eirunepé',
+        'LAbrea': 'Lábrea',
+        'Ji-ParanA': 'Ji-Paraná'
+    }
+
+    return correções
+
+def aplicar_correcao_nomes(df):
+    """Aplica correções de nomes nas regiões do DataFrame."""
+    correções = corrigir_nomes_regioes()
+
+    # Aplica as correções de nome
+    df['regiao'] = df['regiao'].replace(correções)
+
+    # Normaliza todas as strings
+    df['regiao'] = df['regiao'].apply(normalizar_string)
+    df['setor'] = df['setor'].apply(normalizar_string)
+
+    return df
+
+# Definição dos setores e metadados - garantindo codificação UTF-8
 setores = ['Agropecuária', 'Indústria', 'Construção', 'Serviços']
 metadados_setores = {
     'Agropecuária': {
@@ -453,7 +525,9 @@ def carregar_dados_reais_ibge(_gdf):
         embedded_file = "dados_ibge_processados_2021.csv"
         if Path(embedded_file).exists():
             df_embedded = pd.read_csv(embedded_file)
-            st.success(f"✅ Dados reais do IBGE carregados: {df_embedded['regiao'].nunique()} regiões, {len(df_embedded)} entradas setoriais")
+            # Apply region name corrections to fix encoding issues
+            df_embedded = aplicar_correcao_nomes(df_embedded)
+            st.success(f"✅ Dados reais do IBGE carregados e corrigidos: {df_embedded['regiao'].nunique()} regiões, {len(df_embedded)} entradas setoriais")
             return df_embedded
 
         # Fallback: Try to process raw IBGE data (for local development)
@@ -465,8 +539,10 @@ def carregar_dados_reais_ibge(_gdf):
                 df_municipal = parse_ibge_municipal_data(ibge_file, 2021)
                 df_regional = aggregate_by_immediate_region(df_municipal)
                 df_compatible = create_compatible_economic_data(df_regional, _gdf)
+                # Apply region name corrections
+                df_compatible = aplicar_correcao_nomes(df_compatible)
 
-                st.success(f"✅ Dados reais do IBGE processados: {len(df_regional)} regiões, {len(df_compatible)} entradas setoriais")
+                st.success(f"✅ Dados reais do IBGE processados e corrigidos: {len(df_regional)} regiões, {len(df_compatible)} entradas setoriais")
                 return df_compatible
 
         except Exception as e:
@@ -484,7 +560,7 @@ def carregar_dados_reais_ibge(_gdf):
 def gerar_dados_sinteticos_fallback(_gdf):
     """Gera dados sintéticos como fallback se os dados reais do IBGE não estiverem disponíveis."""
     np.random.seed(42)  # Resultados consistentes
-    regioes = _gdf['NM_RGINT'].tolist()
+    regioes = [normalizar_string(nome) for nome in _gdf['NM_RGINT'].tolist()]
 
     dados = []
     for regiao in regioes:
@@ -497,15 +573,19 @@ def gerar_dados_sinteticos_fallback(_gdf):
         }
 
         for setor in setores:
+            # Garantir que setor e região estão normalizados
             dados.append({
-                'regiao': regiao,
-                'setor': setor,
+                'regiao': normalizar_string(regiao),
+                'setor': normalizar_string(setor),
                 'vab': vab_base[setor],
                 'empregos': vab_base[setor] * np.random.uniform(15, 25),  # Empregos por R$ milhão
                 'empresas': int(vab_base[setor] * np.random.uniform(0.5, 2.0))  # Número de empresas
             })
 
     df = pd.DataFrame(dados)
+
+    # Aplicar correções de nomes e normalizar strings
+    df = aplicar_correcao_nomes(df)
 
     # Calcular shares (participação de cada região no VAB setorial nacional)
     df['share_nacional'] = df.groupby('setor')['vab'].transform(lambda x: x / x.sum())
@@ -723,10 +803,27 @@ def executar_simulacao_avancada(df_economia, gdf, valor_choque, setor_choque, re
     }
 
     for metrica, bins in all_bins.items():
-        labels = [i for i in range(len(bins) - 1)]
-        classes = pd.cut(impacto_agregado[metrica], bins=bins, labels=labels, include_lowest=True, duplicates='drop')
-        df_resultados[f'classe_{metrica}'] = df_resultados['regiao'].map(classes)
-        df_resultados[f'classe_{metrica}'] = df_resultados[f'classe_{metrica}'].fillna(0)
+        # Ensure bins is properly formatted and has at least 2 values
+        if len(bins) < 2:
+            bins = [impacto_agregado[metrica].min(), impacto_agregado[metrica].max()]
+
+        # Create labels after confirming bin count
+        num_labels = max(1, len(bins) - 1)
+        labels = [i for i in range(num_labels)]
+
+        try:
+            classes = pd.cut(impacto_agregado[metrica], bins=bins, labels=labels, include_lowest=True, duplicates='drop')
+            # Criar um dicionário para mapear região -> classe
+            classes_dict = classes.to_dict()
+            df_resultados[f'classe_{metrica}'] = df_resultados['regiao'].map(classes_dict)
+            df_resultados[f'classe_{metrica}'].fillna(0, inplace=True)
+        except ValueError as e:
+            # Fallback: use simple quartile-based binning
+            classes = pd.qcut(impacto_agregado[metrica], q=min(4, len(impacto_agregado[metrica].unique())),
+                            labels=False, duplicates='drop')
+            classes_dict = classes.to_dict()
+            df_resultados[f'classe_{metrica}'] = df_resultados['regiao'].map(classes_dict)
+            df_resultados[f'classe_{metrica}'].fillna(0, inplace=True)
 
     # --- PARTE 5: CÁLCULO DOS PERCENTUAIS DE AUMENTO ---
     df_resultados_com_percentuais = calcular_percentuais_impacto(df_economia, df_resultados)
@@ -813,7 +910,8 @@ def criar_controles_simulacao_sidebar(df_economia):
         return
 
     # Dados da região selecionada
-    dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa].copy()
+    regiao_normalizada = normalizar_string(st.session_state.regiao_ativa)
+    dados_regiao = df_economia[df_economia['regiao'] == regiao_normalizada].copy()
 
     # Cabeçalho elegante da simulação
     st.markdown(f"""
@@ -1109,8 +1207,19 @@ def criar_sidebar_controles(df_economia, gdf):
 
         # Calcular o valor absoluto e exibi-lo
         if not is_disabled:
-            dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
-            dados_setor = dados_regiao[dados_regiao['setor'] == setor_selecionado]
+            # Normalizar strings para matching robusto
+            regiao_normalizada = normalizar_string(st.session_state.regiao_ativa)
+            setor_normalizado = normalizar_string(setor_selecionado)
+
+            dados_regiao = df_economia[df_economia['regiao'] == regiao_normalizada]
+            dados_setor = dados_regiao[dados_regiao['setor'] == setor_normalizado]
+
+            # Debug para ajudar a identificar problemas
+            if dados_regiao.empty:
+                st.warning(f"Região '{regiao_normalizada}' não encontrada nos dados econômicos.")
+            elif dados_setor.empty:
+                setores_disponiveis = dados_regiao['setor'].unique().tolist()
+                st.warning(f"Setor '{setor_normalizado}' não encontrado para região '{regiao_normalizada}'. Setores disponíveis: {setores_disponiveis}")
 
             if not dados_setor.empty:
                 vab_setor = dados_setor['vab'].sum()
@@ -1679,7 +1788,8 @@ def criar_dashboard_comparacao_simulacoes(simulacoes_ativas):
     for sim in simulacoes_ativas:
         total_impacto = sim['resultados']['impacto_producao'].sum()
         total_empregos = sim['resultados']['impacto_empregos'].sum()
-        top_regiao = sim['resultados'].groupby('regiao')['impacto_producao'].sum().idxmax()
+        top_regiao_series = sim['resultados'].groupby('regiao')['impacto_producao'].sum()
+        top_regiao = top_regiao_series.idxmax() if not top_regiao_series.empty else 'N/A'
         top_impacto_regiao = sim['resultados'].groupby('regiao')['impacto_producao'].sum().max()
 
         dados_comparacao.append({
@@ -1861,7 +1971,10 @@ def criar_dashboard_regiao_elegante(dados_regiao):
     """, unsafe_allow_html=True)
 
     # Setor dominante apenas
-    setor_dominante = dados_regiao.loc[dados_regiao['vab'].idxmax(), 'setor']
+    if not dados_regiao.empty and len(dados_regiao) > 0:
+        setor_dominante = dados_regiao.loc[dados_regiao['vab'].idxmax(), 'setor']
+    else:
+        setor_dominante = 'Não disponível'
     vab_dominante = dados_regiao['vab'].max()
     percentual_dominante = (vab_dominante / vab_total) * 100
 
@@ -2404,8 +2517,11 @@ def criar_ranking_resultados_elegante(resultados_simulacao):
                 st.metric("🏢 Empresas Impactadas", f"{total_empresas:,.0f}")
 
                 # Setor mais impactado
-                setor_max = dados_regiao.loc[dados_regiao['impacto_producao'].idxmax(), 'setor']
-                st.info(f"**Setor líder:** {metadados_setores[setor_max]['emoji']} {setor_max}")
+                if not dados_regiao.empty and len(dados_regiao) > 0:
+                    setor_max = dados_regiao.loc[dados_regiao['impacto_producao'].idxmax(), 'setor']
+                    st.info(f"**Setor líder:** {metadados_setores[setor_max]['emoji']} {setor_max}")
+                else:
+                    st.info("**Setor líder:** Dados não disponíveis")
 
 # ==============================================================================
 # INTERFACE PRINCIPAL ELEGANTE
@@ -2828,7 +2944,8 @@ def simulacao_principal_tab(gdf, df_economia):
         # Perfil compacto da região selecionada
         if st.session_state.regiao_ativa is not None:
             with st.expander(f"📍 Perfil da Região: {st.session_state.regiao_ativa}", expanded=True):
-                dados_regiao = df_economia[df_economia['regiao'] == st.session_state.regiao_ativa]
+                regiao_normalizada = normalizar_string(st.session_state.regiao_ativa)
+                dados_regiao = df_economia[df_economia['regiao'] == regiao_normalizada]
                 
                 # Usando st.columns para garantir o layout correto
                 col1, col2, col3 = st.columns(3)
@@ -2840,9 +2957,12 @@ def simulacao_principal_tab(gdf, df_economia):
                     st.metric("Empresas", f"{dados_regiao['empresas'].sum():,}")
 
                 # Gráfico de Setor Dominante
-                setor_dominante = dados_regiao.loc[dados_regiao['vab'].idxmax()]
-                st.markdown(f"**Setor Principal:** {setor_dominante['setor']}")
-                st.progress(setor_dominante['vab'] / dados_regiao['vab'].sum())
+                if not dados_regiao.empty and len(dados_regiao) > 0 and dados_regiao['vab'].sum() > 0:
+                    setor_dominante = dados_regiao.loc[dados_regiao['vab'].idxmax()]
+                    st.markdown(f"**Setor Principal:** {setor_dominante['setor']}")
+                    st.progress(setor_dominante['vab'] / dados_regiao['vab'].sum())
+                else:
+                    st.markdown("**Setor Principal:** Dados não disponíveis")
 
     # ==============================================================================
     # COLUNA DIREITA: RESULTADOS DA SIMULAÇÃO
